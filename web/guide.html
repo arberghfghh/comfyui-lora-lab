@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LoRA Lab Guide</title>
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>
+:root { --bg: #0f1115; --panel: #171a21; --panel2: #1e222b; --line: #2a2f3a; --text: #e6e8ee; --muted: #8b93a5; --accent: #7c9cff; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.wrap { display: grid; grid-template-columns: 260px minmax(0, 820px); gap: 32px; max-width: 1140px; margin: 0 auto; padding: 24px 16px 80px; }
+nav { position: sticky; top: 16px; align-self: start; max-height: calc(100vh - 32px); overflow-y: auto; font-size: 13.5px; }
+nav a { display: block; color: var(--muted); text-decoration: none; padding: 4px 8px; border-radius: 6px; }
+nav a:hover, nav a.on { color: var(--text); background: var(--panel2); }
+nav .back { color: var(--accent); margin-bottom: 12px; }
+article h1 { font-size: 28px; margin: 0 0 12px; }
+article h2 { font-size: 21px; margin: 28px 0 10px; }
+article h3 { font-size: 16.5px; margin: 24px 0 6px; }
+article a { color: var(--accent); }
+article code { background: var(--panel2); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; font-size: 13.5px; }
+article pre { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+article pre code { border: 0; padding: 0; background: none; }
+article table { border-collapse: collapse; width: 100%; margin: 10px 0 16px; font-size: 14px; display: block; overflow-x: auto; }
+article th, article td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+article th { background: var(--panel); }
+article blockquote { margin: 12px 0; padding: 8px 14px; border-left: 3px solid #6b5328; background: #2a2416; color: #f0c27a; border-radius: 0 8px 8px 0; }
+article hr { border: 0; border-top: 1px solid var(--line); margin: 28px 0; }
+article li { margin: 3px 0; }
+.err { color: #ef6b6b; }
+@media (max-width: 860px) { .wrap { grid-template-columns: 1fr; } nav { position: static; max-height: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav id="toc"><a class="back" href="index.html">← Back to LoRA Lab</a></nav>
+  <article id="doc">Loading the guide…</article>
+</div>
+<script>
+// Renders USER_GUIDE.md (the same file shown on GitHub) with a small Markdown subset:
+// headings, paragraphs, lists, tables, code, blockquotes, rules, bold, italics and links.
+(() => {
+"use strict";
+const esc = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const slug = (t) => t.toLowerCase().replace(/<[^>]+>/g, "").replace(/[^\w\s-]/g, "").trim().replace(/\s/g, "-");
+function inline(t) {
+  const codes = [];
+  t = esc(t).replace(/`([^`]+)`/g, (_, c) => `\u0000${codes.push(c) - 1}\u0000`);
+  t = t.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|[^*])\*([^*\s][^*]*)\*/g, "$1<i>$2</i>")
+       .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, label, url) => {
+         const safe = /^(https?:|#|[\w./-]+$)/.test(url) ? url : "#";
+         const ext = /^https?:/.test(safe) ? ' target="_blank" rel="noopener"' : "";
+         return `<a href="${safe.replace(/"/g, "%22")}"${ext}>${label}</a>`;
+       });
+  return t.replace(/\u0000(\d+)\u0000/g, (_, i) => `<code>${codes[+i]}</code>`);
+}
+function render(md) {
+  const lines = md.replace(/\r/g, "").split("\n"), out = [], toc = [];
+  let i = 0;
+  const isTable = (l) => /^\s*\|.*\|\s*$/.test(l);
+  const isList = (l) => /^\s*([-*]|\d+\.)\s+/.test(l);
+  while (i < lines.length) {
+    const l = lines[i];
+    if (/^```/.test(l)) {
+      const code = []; i++;
+      while (i < lines.length && !/^```/.test(lines[i])) code.push(lines[i++]);
+      i++; out.push(`<pre><code>${esc(code.join("\n"))}</code></pre>`); continue;
+    }
+    const h = /^(#{1,4})\s+(.*)$/.exec(l);
+    if (h) {
+      const level = h[1].length, html = inline(h[2]), id = slug(h[2]);
+      if (level === 2) toc.push({ id, text: h[2].replace(/[*`]/g, "") });
+      out.push(`<h${level} id="${id}">${html}</h${level}>`); i++; continue;
+    }
+    if (/^---+\s*$/.test(l)) { out.push("<hr>"); i++; continue; }
+    if (isTable(l)) {
+      const rows = [];
+      while (i < lines.length && isTable(lines[i])) rows.push(lines[i++]);
+      const cells = (r) => r.trim().replace(/^\||\|$/g, "").split("|").map(c => inline(c.trim()));
+      const body = rows.filter((_, k) => k !== 1 || !/^[\s|:-]+$/.test(rows[1]));
+      out.push("<table><thead><tr>" + cells(body[0]).map(c => `<th>${c}</th>`).join("") + "</tr></thead><tbody>" +
+        body.slice(1).map(r => "<tr>" + cells(r).map(c => `<td>${c}</td>`).join("") + "</tr>").join("") + "</tbody></table>");
+      continue;
+    }
+    if (/^>\s?/.test(l)) {
+      const q = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) q.push(lines[i++].replace(/^>\s?/, ""));
+      out.push(`<blockquote>${inline(q.join(" "))}</blockquote>`); continue;
+    }
+    if (isList(l)) {
+      // One level of nesting: items indented by 2+ spaces belong to the previous item.
+      const ordered = /^\s*\d+\./.test(l), items = [];
+      while (i < lines.length && (isList(lines[i]) || (/^\s{2,}\S/.test(lines[i]) && items.length))) {
+        const line = lines[i++];
+        if (/^\s{2,}([-*]|\d+\.)\s+/.test(line) && items.length) items[items.length - 1].sub.push(line.replace(/^\s*([-*]|\d+\.)\s+/, ""));
+        else if (/^\s{2,}\S/.test(line) && !isList(line.trimStart()) && items.length) {
+          const last = items[items.length - 1];
+          if (last.sub.length) last.sub[last.sub.length - 1] += " " + line.trim(); else last.text += " " + line.trim();
+        } else items.push({ text: line.replace(/^\s*([-*]|\d+\.)\s+/, ""), sub: [] });
+      }
+      const tag = ordered ? "ol" : "ul";
+      out.push(`<${tag}>` + items.map(it => `<li>${inline(it.text)}${it.sub.length ? "<ul>" + it.sub.map(s => `<li>${inline(s)}</li>`).join("") + "</ul>" : ""}</li>`).join("") + `</${tag}>`);
+      continue;
+    }
+    if (!l.trim()) { i++; continue; }
+    const para = [];
+    while (i < lines.length && lines[i].trim() && !/^(#{1,4}\s|```|>|---+\s*$)/.test(lines[i]) && !isTable(lines[i]) && !isList(lines[i])) para.push(lines[i++].trim());
+    out.push(`<p>${inline(para.join(" "))}</p>`);
+  }
+  return { html: out.join("\n"), toc };
+}
+fetch("USER_GUIDE.md").then(r => { if (!r.ok) throw new Error(r.statusText); return r.text(); }).then(md => {
+  const { html, toc } = render(md);
+  document.getElementById("doc").innerHTML = html;
+  const nav = document.getElementById("toc");
+  for (const t of toc) { const a = document.createElement("a"); a.href = "#" + t.id; a.textContent = t.text; nav.append(a); }
+  if (location.hash) { const el = document.getElementById(location.hash.slice(1)); if (el) el.scrollIntoView(); }
+}).catch(err => {
+  document.getElementById("doc").innerHTML = `<p class="err">Couldn't load the guide (${esc(err.message)}). It's also in <code>web/USER_GUIDE.md</code>.</p>`;
+});
+})();
+</script>
+</body>
+</html>

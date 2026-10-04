@@ -1,0 +1,2074 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LoRA Lab</title>
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#171a21">
+<style>
+:root {
+  --bg: #0f1115; --panel: #171a21; --panel2: #1e222b; --line: #2a2f3a;
+  --text: #e6e8ee; --muted: #8b93a5; --accent: #7c9cff; --accent2: #5b7cf0;
+  --ok: #4cc38a; --warn: #e5a54b; --err: #ef6b6b; --thumb: 220px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+  font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+button, input, select, textarea { font: inherit; color: inherit; }
+.app { display: grid; grid-template-columns: 400px 1fr; height: 100vh; }
+aside { background: var(--panel); border-right: 1px solid var(--line); overflow-y: auto; padding: 14px 16px 30px; }
+main { overflow-y: auto; padding: 14px 18px 40px; }
+h1 { font-size: 18px; margin: 0 0 2px; letter-spacing: .2px; }
+h1 small { color: var(--muted); font-weight: 400; font-size: 12px; margin-left: 6px; }
+h1 { display: flex; align-items: baseline; }
+.guide { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--accent); text-decoration: none; border: 1px solid var(--line); border-radius: 12px; padding: 2px 9px; }
+.guide:hover { border-color: var(--accent); }
+.status { font-size: 12px; color: var(--muted); display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--err); display: inline-block; }
+.dot.on { background: var(--ok); }
+section { border-top: 1px solid var(--line); padding: 12px 0 4px; }
+section > .h { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: 8px;
+  display: flex; justify-content: space-between; align-items: center; }
+label { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
+input[type=text], input[type=number], select, textarea {
+  width: 100%; background: var(--panel2); border: 1px solid var(--line); border-radius: 7px; padding: 7px 9px; outline: none; }
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+textarea { resize: vertical; min-height: 64px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 3px; }
+.seg button { border: 0; background: transparent; padding: 7px; border-radius: 6px; cursor: pointer; color: var(--muted); }
+.seg button.on { background: var(--accent2); color: #fff; }
+#engineSeg { grid-template-columns: repeat(4, 1fr); }
+#engineSeg button { padding: 7px 2px; font-size: 12.5px; }
+.btn { background: var(--panel2); border: 1px solid var(--line); border-radius: 7px; padding: 6px 10px; cursor: pointer; }
+.btn:hover { border-color: var(--accent); }
+.btn.sm { padding: 3px 8px; font-size: 12px; }
+.btn.primary { background: var(--accent2); border-color: var(--accent2); color: #fff; font-weight: 600; }
+.btn.danger:hover { border-color: var(--err); color: var(--err); }
+.inline { display: flex; gap: 6px; align-items: center; }
+.inline > input { flex: 1; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--text); margin: 8px 0; cursor: pointer; }
+.hint { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+.lock { font-size: 11.5px; color: var(--muted); background: var(--panel2); border: 1px dashed var(--line); border-radius: 7px; padding: 6px 8px; margin-top: 8px; }
+.loras { display: flex; flex-direction: column; gap: 6px; }
+.lora { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
+.lora.sel { border-color: var(--accent2); }
+.lora.off { opacity: .45; }
+.lora .top { display: flex; gap: 8px; align-items: center; }
+.lora .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.lora .str { width: 64px; padding: 4px 6px; }
+.lora .r18 { font-size: 10px; padding: 1px 6px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
+.lora .r18.on { border-color: #8a3a3a; color: #ff9b9b; }
+.lora .more { margin-top: 6px; display: none; }
+.lora.sel .more { display: block; }
+.badge { font-size: 10px; padding: 1px 6px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.badge.sdxl { color: #9fc1ff; border-color: #34507f; }
+.badge.anima { color: #f2a7d8; border-color: #6d3a5d; }
+.badge.pony { color: #f0c27a; border-color: #6b5328; }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.tag { font-size: 11px; background: #252a35; border: 1px solid var(--line); border-radius: 10px; padding: 1px 7px; cursor: pointer; color: var(--muted); }
+.tag:hover { color: var(--text); border-color: var(--accent); }
+.toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.toolbar .grow { flex: 1; }
+.batch { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-bottom: 16px; }
+.batch .bh { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; margin-bottom: 10px; }
+.batch .bh b { font-size: 13px; }
+.batch .bh .meta { font-size: 12px; color: var(--muted); flex: 1; min-width: 200px; }
+.batch .bh .p { font-size: 12px; color: var(--muted); width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gridwrap { overflow-x: auto; }
+.grid { display: grid; gap: 8px; }
+.colh { font-size: 12px; color: var(--muted); padding: 0 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: var(--thumb); }
+.colh b { color: var(--text); font-weight: 600; }
+.cell { width: var(--thumb); aspect-ratio: var(--ar, 832/1216); background: var(--panel2); border: 1px solid var(--line); border-radius: 8px;
+  position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.cell img { width: 100%; height: 100%; object-fit: cover; cursor: zoom-in; display: block; }
+.cell img.preview { opacity: .7; filter: blur(.5px); cursor: default; }
+.cell .st { font-size: 12px; color: var(--muted); text-align: center; padding: 8px; }
+.cell .st.err { color: var(--err); }
+.cell .bar { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--accent); width: 0; transition: width .2s; }
+.cell .seed { position: absolute; right: 6px; bottom: 6px; font-size: 10px; background: rgba(0,0,0,.55); padding: 1px 6px; border-radius: 8px; color: #ddd; }
+.empty { color: var(--muted); text-align: center; }
+.empty b { color: var(--text); }
+.lb { position: fixed; inset: 0; background: rgba(5,6,9,.94); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+.lb.on { display: flex; }
+.lb img { max-width: 94vw; max-height: 84vh; object-fit: contain; border-radius: 6px; }
+.lb .cap { margin-top: 10px; font-size: 13px; color: var(--muted); display: flex; gap: 14px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.lb .cap a { color: var(--accent); }
+.lb .nav { position: absolute; top: 50%; transform: translateY(-50%); font-size: 32px; background: none; border: 0; color: #aaa; cursor: pointer; padding: 20px; }
+.lb .nav:hover { color: #fff; }
+.lb .prev { left: 6px; } .lb .next { right: 6px; }
+.lb .x { position: absolute; top: 10px; right: 16px; font-size: 26px; background: none; border: 0; color: #aaa; cursor: pointer; }
+.mode { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 10px 0 8px; }
+.mode button { padding: 9px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel2); color: var(--muted); cursor: pointer; font-weight: 700; }
+.mode button.on[data-m="general"] { background: #233457; border-color: #7c9cff; color: #fff; }
+.mode button.on[data-m="adult"] { background: #4d1d2e; border-color: #e0577f; color: #fff; }
+body.adult { --accent: #e0577f; --accent2: #b63a62; }
+body.adult aside { border-top: 3px solid #b63a62; }
+body.adult h1 small::after { content: " · 18+ workspace"; color: #ff9bb5; }
+body:not(.advanced) .adv { display: none !important; }
+body:not(.adult) .adultonly { display: none !important; }
+aside section > .h { cursor: pointer; user-select: none; }
+aside section > .h, .card.collapsible > .h { cursor: pointer; user-select: none; }
+aside section > .h > span:first-child::before, .card.collapsible > .h > span:first-child::before { content: "▾"; display: inline-block; width: 14px; color: var(--muted); }
+aside section.collapsed > .h > span:first-child::before, .card.collapsible.collapsed > .h > span:first-child::before { content: "▸"; }
+aside section.collapsed > :not(.h), .card.collapsible.collapsed > :not(.h) { display: none !important; }
+section > .h small { text-transform: none; letter-spacing: 0; font-weight: 400; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; }
+.card > .h { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+.card.collapsed { padding-bottom: 6px; }
+.composer-head { display: flex; gap: 10px; align-items: baseline; margin-bottom: 8px; }
+.composer #prompt { min-height: 96px; font-size: 14.5px; }
+.composer details.more summary { cursor: pointer; color: var(--muted); font-size: 12.5px; margin-top: 10px; }
+.genrow { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+.genrow .sum { flex: 1; font-size: 12.5px; color: var(--muted); }
+.genrow .btn.primary { padding: 11px 26px; font-size: 15px; }
+.kbd { font-size: 10.5px; opacity: .7; margin-left: 6px; font-weight: 400; }
+.toolbar { position: sticky; top: -14px; background: var(--bg); z-index: 4; padding: 8px 0; }
+#libCard .libtags { max-height: 260px; }
+.empty { margin-top: 6vh !important; }
+.empty ol { display: inline-block; text-align: left; margin: 10px auto 12px; line-height: 1.9; }
+.refwarn { margin-top: 6px; padding: 7px 9px; border: 1px solid #6b5328; background: #2a2416; border-radius: 7px; font-size: 12px; color: #f0c27a; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.gimg { position: relative; }
+.gimg .gb { position: absolute; bottom: 5px; display: flex; gap: 4px; right: 5px; }
+.gimg .gb button { background: rgba(0,0,0,.6); color: #ddd; border: 0; border-radius: 6px; padding: 2px 6px; cursor: pointer; font-size: 12px; }
+.gimg .gb button.on { color: #ffd166; }
+.xref { width: 72px; height: 96px; border: 1.5px dashed var(--line); border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  text-align: center; font-size: 11px; color: var(--muted); cursor: pointer; position: relative; overflow: hidden; background: var(--panel2); flex: none; }
+.xref:hover, .xref.over { border-color: var(--accent); }
+.xref img { width: 100%; height: 100%; object-fit: cover; }
+.xref .x { position: absolute; top: 2px; right: 3px; background: rgba(0,0,0,.6); color: #fff; border: 0; border-radius: 50%; width: 18px; height: 18px; font-size: 12px; line-height: 18px; padding: 0; cursor: pointer; }
+.lb .tools { display: flex; gap: 8px; margin-top: 8px; }
+#lbImg { background: repeating-conic-gradient(#2a2d34 0% 25%, #1d2026 0% 50%) 50% / 20px 20px; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: -4px 0 14px; }
+.tabs button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); padding: 8px 14px; cursor: pointer; font-weight: 600; }
+.tabs button.on { color: var(--text); border-bottom-color: var(--accent); }
+.chars { display: grid; grid-template-columns: 240px 1fr; gap: 16px; align-items: start; }
+.charlist { display: flex; flex-direction: column; gap: 6px; }
+.charitem { display: flex; gap: 10px; align-items: center; padding: 6px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); cursor: pointer; }
+.charitem.on { border-color: var(--accent); }
+.charitem img, .charmini img { width: 44px; height: 44px; object-fit: cover; border-radius: 7px; background: var(--panel2); flex: none; }
+.charitem b, .charmini b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chared { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.charhead { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
+.charref { width: 150px; aspect-ratio: 3/4; border: 1.5px dashed var(--line); border-radius: 9px; display: flex; align-items: center; justify-content: center;
+  text-align: center; font-size: 12px; color: var(--muted); cursor: pointer; overflow: hidden; background: var(--panel2); padding: 6px; }
+.charref.over, .charref:hover { border-color: var(--accent); }
+.charref img { width: 100%; height: 100%; object-fit: cover; display: none; }
+.charref.has { padding: 0; border-style: solid; } .charref.has img { display: block; } .charref.has span { display: none; }
+.charlora { display: flex; gap: 8px; align-items: center; background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; margin-bottom: 5px; font-size: 13px; }
+.charlora .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.charlora input { width: 64px; padding: 3px 6px; }
+.cgallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+.cgallery img { width: 100%; aspect-ratio: 3/4; object-fit: cover; border-radius: 7px; cursor: zoom-in; background: var(--panel2); }
+.charmini { display: flex; gap: 10px; align-items: center; margin: 8px 0 2px; min-width: 0; }
+@media (max-width: 860px) { .chars { grid-template-columns: 1fr; } }
+.cats { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 6px; }
+.cat { font-size: 11.5px; padding: 3px 9px; border-radius: 12px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
+.cat.on { background: var(--panel2); color: var(--text); border-color: var(--accent); }
+.libtags { display: flex; flex-wrap: wrap; gap: 5px; max-height: 190px; overflow-y: auto; padding: 2px 0; }
+.libtags .tag { font-size: 12px; padding: 2px 9px; }
+.libtags .tag.on { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+.libtags.editing .tag:hover { border-color: var(--err); color: var(--err); }
+.drop { border: 1.5px dashed var(--line); border-radius: 9px; padding: 10px; text-align: center; cursor: pointer; color: var(--muted);
+  font-size: 12.5px; background: var(--panel2); display: flex; gap: 10px; align-items: center; justify-content: center; min-height: 64px; }
+.drop:hover, .drop.over { border-color: var(--accent); color: var(--text); }
+.drop img { max-height: 120px; max-width: 45%; border-radius: 6px; display: none; }
+.drop.has img { display: block; }
+.refbox { margin-top: 8px; }
+.refbox .rh { display: flex; align-items: center; gap: 6px; margin: 8px 0 4px; font-size: 12px; color: var(--muted); }
+.refbox .rh b { color: var(--text); flex: 1; }
+.refbox textarea { min-height: 70px; font-size: 12.5px; }
+.toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: #2b1f22; border: 1px solid var(--err); color: #ffd6d6;
+  padding: 9px 14px; border-radius: 8px; font-size: 13px; display: none; z-index: 20; max-width: 90vw; white-space: pre-wrap; }
+.toast.ok { background: #1b2a23; border-color: var(--ok); color: #d5ffe9; }
+@media (max-width: 860px) {
+  .app { grid-template-columns: 1fr; height: auto; }
+  aside { border-right: 0; border-bottom: 1px solid var(--line); padding-bottom: 14px; }
+  .gen { position: static; }
+  :root { --thumb: 150px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+<aside>
+  <h1>LoRA Lab <small>same prompt · many LoRAs</small><a class="guide" href="guide.html" target="_blank" title="Open the user guide">? Guide</a></h1>
+  <div class="mode" id="modeSeg" title="Two separate workspaces: each keeps its own prompt, LoRAs, references and results">
+    <button data-m="general">General</button><button data-m="adult">Adult 18+</button>
+  </div>
+  <div class="status"><span class="dot" id="dot"></span><span id="conn">Connecting to ComfyUI…</span><span style="flex:1"></span><span id="queueInfo"></span></div>
+
+  <section>
+    <div class="h"><span>1 · Model</span></div>
+    <div class="seg" id="engineSeg">
+      <button data-e="sdxl" title="SDXL checkpoints: Illustrious, Pony, NoobAI, WAI…">Illustrious / Pony</button>
+      <button data-e="anima">Anima</button>
+      <button data-e="klein" title="FLUX.2 Klein — natural-language prompts">Klein</button>
+      <button data-e="zimage" title="Z-Image Turbo — photoreal, renders text, commercial-use license">Z-Image</button>
+    </div>
+    <div class="hint" id="engineHint" style="margin-top:6px"></div>
+    <label for="model">Model</label>
+    <select id="model"></select>
+    <div id="sdxlExtra" class="adv">
+      <div class="row">
+        <div><label for="vae">VAE</label><select id="vae"></select></div>
+        <div><label for="clipSkip">Clip skip</label><select id="clipSkip"><option value="1">1</option><option value="2">2</option></select></div>
+      </div>
+    </div>
+    <div id="unetExtra" class="adv">
+      <div class="row">
+        <div><label for="te">Text encoder</label><select id="te"></select></div>
+        <div><label for="avae">VAE</label><select id="avae"></select></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h"><span>2 · LoRAs to compare <span id="loraCount"></span></span>
+      <span class="inline"><button class="btn sm" id="selAll">All</button><button class="btn sm" id="selNone">None</button><button class="btn sm" id="reloadLoras" title="Rescan LoRA folder">↻</button></span></div>
+    <input type="text" id="loraFilter" placeholder="Filter LoRAs…">
+    <label class="check"><input type="checkbox" id="baseline"> Include a "No LoRA" image for comparison</label>
+    <label class="check adultonly"><input type="checkbox" id="showGenLoras"> Also show General LoRAs</label>
+    <label class="check adv"><input type="checkbox" id="showAll"> Show LoRAs made for other model types</label>
+    <div class="hint" id="loraTabNote" style="margin-bottom:6px"></div>
+    <div class="loras" id="loraList"><div class="hint">Loading…</div></div>
+  </section>
+
+  <section>
+    <div class="h"><span>3 · Character <small>(optional)</small></span><button class="btn sm" id="charEditActive" style="display:none">Edit</button></div>
+    <select id="charActive"></select>
+    <div id="charActiveBox" style="display:none">
+      <div class="charmini"><img id="charMiniImg" alt=""><div style="min-width:0"><b id="charMiniName"></b><div class="hint" id="charMiniInfo"></div></div></div>
+      <div class="row">
+        <label class="check"><input type="checkbox" id="cuAppearance"> Appearance</label>
+        <label class="check"><input type="checkbox" id="cuOutfit"> Outfit</label>
+        <label class="check"><input type="checkbox" id="cuLoras"> Their LoRAs</label>
+        <label class="check"><input type="checkbox" id="cuRef"> Reference image</label>
+      </div>
+      <div class="inline" style="flex-wrap:wrap">
+        <button class="btn sm" id="charRestore" title="Model, size, LoRAs and strengths you last used with this character here">↺ Use last settings</button>
+        <select id="charRecent" style="flex:1;min-width:140px"></select>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h"><span>4 · Reference images <small>(optional)</small></span><button class="btn sm" id="refClear" style="display:none">Clear</button></div>
+    <input type="file" id="refFile" accept="image/*" hidden>
+    <div class="drop" id="drop" tabindex="0"><img id="refImg" alt="Reference"><span id="dropText">Image 1: drop, paste (Ctrl+V), or click to choose</span></div>
+    <div id="extraRefsWrap" style="display:none">
+      <input type="file" id="extraRefFile" accept="image/*" hidden>
+      <div class="inline" id="extraRefs" style="margin-top:8px"></div>
+      <div class="hint" id="extraRefsHint"></div>
+    </div>
+    <div id="refGen" style="display:none">
+      <label class="check" id="useRefRow"><input type="checkbox" id="useRef"> <b>Use the reference images</b>&nbsp;when generating</label>
+      <div class="hint" id="refCharNote" style="display:none;margin:6px 0"></div>
+      <div id="refGenOpts">
+        <div id="kleinModeWrap">
+          <label for="kleinRefMode">Klein mode</label>
+          <select id="kleinRefMode">
+            <option value="reference">Reference edit — keeps the person/scene, prompt says what to change</option>
+            <option value="img2img">Image-to-image — like the other models</option>
+          </select>
+        </div>
+        <div id="denoiseWrap">
+          <label for="denoise">How much to change: <span id="denoiseV"></span> <span class="hint" style="display:inline">(low = stay close to the image)</span></label>
+          <input type="range" id="denoise" min="0.2" max="1" step="0.05" style="width:100%">
+        </div>
+        <button class="btn sm" id="refShape" style="margin-top:6px"></button>
+      </div>
+    </div>
+    <div id="refControls" style="display:none">
+      <label for="refThr">Tag threshold: <span id="refThrV"></span> <span class="hint" style="display:inline">(lower = more tags)</span></label>
+      <input type="range" id="refThr" min="0.2" max="0.8" step="0.01" style="width:100%">
+      <label class="check"><input type="checkbox" id="refChars"> Include character names</label>
+    </div>
+    <div class="refbox" id="refOut"></div>
+  </section>
+
+  <section>
+    <div class="h"><span>5 · Size &amp; seed</span></div>
+    <label for="size">Size</label>
+    <select id="size">
+      <option value="832x1216">832 × 1216 · portrait</option>
+      <option value="1216x832">1216 × 832 · landscape</option>
+      <option value="1024x1024">1024 × 1024 · square</option>
+      <option value="896x1152">896 × 1152 · portrait</option>
+      <option value="1152x896">1152 × 896 · landscape</option>
+      <option value="768x1344">768 × 1344 · tall</option>
+      <option value="1344x768">1344 × 768 · wide</option>
+      <option value="custom">Custom…</option>
+    </select>
+    <div class="row" id="customSize" style="display:none">
+      <div><label for="w">Width</label><input type="number" id="w" step="64" min="256" max="2048"></div>
+      <div><label for="h">Height</label><input type="number" id="h" step="64" min="256" max="2048"></div>
+    </div>
+    <label for="count">Images per LoRA</label><input type="number" id="count" min="1" max="16">
+    <div class="row adv">
+      <div><label for="steps">Steps</label><input type="number" id="steps" min="1" max="100"></div>
+      <div><label for="cfg">CFG</label><input type="number" id="cfg" min="1" max="20" step="0.5"></div>
+    </div>
+    <div class="row adv">
+      <div><label for="sampler">Sampler</label><select id="sampler"></select></div>
+      <div id="schedWrap"><label for="scheduler">Scheduler</label><select id="scheduler"></select></div>
+    </div>
+    <label for="seed">Seed <span class="hint" style="display:inline">(same seed for every LoRA, +1 per extra image)</span></label>
+    <div class="inline"><input type="number" id="seed" min="0"><button class="btn sm" id="dice" title="New random seed">🎲</button></div>
+    <label class="check"><input type="checkbox" id="autoSeed"> New random seed every time I press Generate</label>
+    <label class="check"><input type="checkbox" id="advanced"> Show advanced settings <span class="hint" style="display:inline">(model files, steps, CFG, sampler)</span></label>
+  </section>
+
+</aside>
+
+<main>
+  <div class="tabs" id="tabs"><button data-tab="results">Create</button><button data-tab="chars">Characters</button></div>
+  <div id="tabChars" style="display:none">
+    <div class="chars">
+      <div class="charlist">
+        <button class="btn primary" id="charNew">+ New character</button>
+        <div class="charlist" id="charList"></div>
+      </div>
+      <div class="chared">
+        <div class="hint" id="charEmpty" style="padding:30px 10px;text-align:center">Create a character to keep their look, outfit, LoRAs and reference image together.<br>Then pick them under <b>Character</b> in the sidebar — your prompt only needs the scene.</div>
+        <div id="charForm" style="display:none">
+          <div class="charhead">
+            <input type="file" id="charRefFile" accept="image/*" hidden>
+            <div class="charref" id="charRefDrop" tabindex="0" title="Reference image: drop, paste or click"><img id="charRefImg" alt=""><span>Drop a reference image here, or click</span></div>
+            <div style="flex:1;min-width:220px">
+              <label for="charName">Name</label><input type="text" id="charName" maxlength="60">
+              <label for="charEngine">Made for</label>
+              <select id="charEngine"><option value="any">Any model type</option><option value="sdxl">Illustrious / Pony</option><option value="anima">Anima</option><option value="klein">Klein</option><option value="zimage">Z-Image</option></select>
+              <div class="inline" style="margin-top:10px;flex-wrap:wrap">
+                <button class="btn sm primary" id="charUseBtn">Use this character</button>
+                <button class="btn sm" id="charAutoTag" title="Read appearance and outfit tags from the reference image">✨ Tags from image</button>
+                <button class="btn sm danger" id="charDelete">Delete</button>
+                <span class="hint" id="charSaved"></span>
+              </div>
+            </div>
+          </div>
+          <label for="charTriggers">Name tag / trigger words</label><input type="text" id="charTriggers" placeholder="e.g. a LoRA trigger word or a known character tag">
+          <label for="charAppearance">Appearance <span class="hint" style="display:inline">— stays the same (hair, eyes, body)</span></label><textarea id="charAppearance" rows="3" placeholder="1girl, long silver hair, golden eyes, …"></textarea>
+          <label for="charOutfit">Outfit <span class="hint" style="display:inline">— change this to change clothes</span></label><textarea id="charOutfit" rows="2" placeholder="black kimono, red obi, …"></textarea>
+          <div class="hint">Tip: click into Appearance or Outfit, then click tags in the sidebar's Tag library to add them here.</div>
+          <label>Character LoRAs <span class="hint" style="display:inline">— added to every image of this character</span></label>
+          <div id="charLoras"></div>
+          <div class="inline"><select id="charLoraPick"></select><button class="btn sm" id="charLoraAdd">Add</button></div>
+          <label for="charNegative">Extra negative tags</label><input type="text" id="charNegative">
+          <label for="charMemory">Memory <span class="hint" style="display:inline">— personality, backstory, rules about how they look; the AI prompt writer reads this when writing prompts</span></label>
+          <textarea id="charMemory" rows="4" placeholder="e.g. Calm and confident, always wears a silver ring on her left hand, never smiles with teeth, from a coastal town…"></textarea>
+          <label for="charNotes">Notes</label><textarea id="charNotes" rows="2"></textarea>
+          <div class="h" style="margin:16px 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)">Gallery <span id="charCount"></span> <span class="hint" style="text-transform:none;letter-spacing:0">— this workspace only · ★ favourite · ⤴ use as reference</span></div>
+          <div class="cgallery" id="charGallery"></div>
+        </div>
+      </div>
+    </div>
+    <div id="libSlotChars" style="margin-top:14px"></div>
+  </div>
+  <div id="tabResults">
+  <div class="card composer">
+    <div class="composer-head"><b>Prompt</b><span class="hint" id="composerHint"></span></div>
+    <textarea id="prompt" rows="4" placeholder="1girl, solo, long silver hair, ..."></textarea>
+    <div class="inline" style="margin-top:8px">
+      <input type="text" id="idea" placeholder="…or describe an idea and let the AI write the prompt (e.g. a knight resting by a campfire at night)">
+      <button class="btn sm" id="dolphinBtn">✨ Write</button>
+    </div>
+    <div class="hint" id="dolphinStatus"></div>
+    <details class="more">
+      <summary>Quality tags &amp; negative prompt</summary>
+    <label for="quality">Quality tags <span class="hint" style="display:inline">(auto per model)</span></label>
+    <div class="inline"><input type="text" id="quality"><button class="btn sm" id="qualityReset" title="Reset to model default">↺</button></div>
+    <label for="negative">Negative prompt</label>
+    <div class="inline" style="align-items:flex-start"><textarea id="negative" rows="2"></textarea><button class="btn sm" id="negReset" title="Reset to model default">↺</button></div>
+    </details>
+    <div class="lock" id="lockNote">🔒 Child-related terms are always added to the negative prompt.</div>
+    <div class="genrow">
+      <div class="sum" id="summary"></div>
+      <button class="btn primary" id="generate">Generate <span class="kbd">Ctrl+Enter</span></button>
+    </div>
+  </div>
+  <div id="libSlotCreate">
+  <section class="card collapsible" id="libCard">
+    <div class="h"><span>Tag library <span id="libNote" style="text-transform:none;letter-spacing:0"></span></span>
+      <button class="btn sm" id="libEdit" title="Add or remove library tags">✎ Edit</button></div>
+    <input type="text" id="libSearch" placeholder="Search tags…">
+    <div class="cats" id="libCats"></div>
+    <div class="libtags" id="libTags"></div>
+    <div class="hint" id="libHint">Click a tag to add it to the prompt, click again to remove it.</div>
+    <div id="libEditor" style="display:none">
+      <label for="libNewTags">Add tags to <b id="libTarget"></b></label>
+      <div class="inline"><input type="text" id="libNewTags" placeholder="e.g. red scarf, fox ears, glowing eyes"><button class="btn sm" id="libAddTags">Add</button></div>
+      <div class="inline" style="margin-top:6px">
+        <button class="btn sm" id="libFromPrompt" title="Save every tag in the current prompt into this category">+ From current prompt</button>
+        <span style="flex:1"></span>
+        <button class="btn sm danger" id="libDelCat">Delete category</button>
+      </div>
+      <label for="libNewCat">New category</label>
+      <div class="inline"><input type="text" id="libNewCat" placeholder="e.g. Characters"><button class="btn sm" id="libAddCat">Create</button></div>
+    </div>
+  </section>
+  </div>
+  <div class="toolbar">
+    <span class="grow" id="progressText"></span>
+    <label class="inline" style="margin:0;font-size:12px;color:var(--muted)">Thumb size <input type="range" id="thumb" min="120" max="420" step="10" style="width:120px"></label>
+    <button class="btn sm danger" id="cancel">Cancel queued</button>
+    <button class="btn sm" id="freeVram" title="Unload models from GPU memory">Free VRAM</button>
+    <button class="btn sm danger" id="clearResults">Clear results</button>
+    <button class="btn sm primary" id="generate2" title="Generate (Ctrl+Enter)">▶ Generate</button>
+  </div>
+  <div id="results"></div>
+  <div class="empty" id="empty">
+    <b style="font-size:16px">Getting started</b>
+    <ol>
+      <li>Pick a <b>model type</b> and model on the left.</li>
+      <li>Tick the <b>LoRAs</b> you want to compare (or none).</li>
+      <li>Write a <b>prompt</b> above — or describe an idea and press ✨ Write. Click tags in the <b>Tag library</b> to add them.</li>
+      <li>Press <b>Generate</b> (or Ctrl+Enter). Every LoRA gets its own column with the same seed.</li>
+    </ol>
+    <span class="hint">Optional: a <b>Character</b> keeps a look, outfit and LoRAs together; <b>Reference images</b> let you start from a photo.</span>
+  </div>
+  </div>
+</main>
+</div>
+
+<div class="lb" id="lb">
+  <button class="x" id="lbX" aria-label="Close">×</button>
+  <button class="nav prev" id="lbPrev" aria-label="Previous">‹</button>
+  <img id="lbImg" alt="">
+  <div class="cap" id="lbCap"></div>
+  <button class="nav next" id="lbNext" aria-label="Next">›</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+"use strict";
+
+// NEG_GUARD is appended to every job's negative prompt; POS_GUARD is intentionally empty.
+const POS_GUARD = "";
+const NEG_GUARD = "loli, shota, child, kid, toddler, aged down, underage, young child, elementary school student, middle school student, childlike body";
+// Sentence-style guards for the photoreal model types (Klein, Z-Image).
+const KLEIN_POS_GUARD = "All people in this image are clearly adults, at least 25 years old, with mature adult faces and fully adult bodies.";
+const KLEIN_NEG_GUARD = "child, children, kid, minor, underage, teen, teenager, childlike body, school uniform";
+// Photoreal, natural-language model types (Klein, Z-Image) share the sentence-style guards above.
+const isPhotoEngine = (e) => e === "klein" || e === "zimage";
+
+const ENGINE_LABEL = { sdxl: "SDXL", anima: "Anima", klein: "Klein", zimage: "Z-Image" };
+const ENGINE_DEFAULTS = {
+  sdxl:  { steps: 28, cfg: 6, sampler: "euler_ancestral", scheduler: "normal", clipSkip: "2", strength: 0.8 },
+  anima: { steps: 30, cfg: 4, sampler: "er_sde", scheduler: "simple", strength: 1.0 },
+  klein: { steps: 4, cfg: 1.5, sampler: "euler", scheduler: "simple", strength: 1.0 },
+  // Z-Image Turbo defaults.
+  zimage: { steps: 10, cfg: 1.5, sampler: "euler", scheduler: "simple", strength: 1.0 },
+};
+// Fixed prompts the fashion LoRAs were trained with (from their model cards); used until you type your own.
+const DEFAULT_TRIGGERS = {
+  // fal's Klein 9B try-on / try-off LoRAs, under their download names and common renames.
+  "flux-klein-tryon-comfy.safetensors": "TRYON. Replace the outfit with the top and bottom shown in the reference images. The final image is a full body shot.",
+  "Klein9B_virtual_tryon.safetensors": "TRYON. Replace the outfit with the top and bottom shown in the reference images. The final image is a full body shot.",
+  "virtual-tryoff-lora_comfy.safetensors": "TRYOFF extract the outfit over a white background, product photography style. NO HUMAN VISIBLE (the garments maintain their 3D form like an invisible mannequin).",
+  "Klein9B_virtual_tryoff.safetensors": "TRYOFF extract the outfit over a white background, product photography style. NO HUMAN VISIBLE (the garments maintain their 3D form like an invisible mannequin).",
+};
+const QUALITY = {
+  pony:  { q: "score_9, score_8_up, score_7_up", n: "score_4, score_5, score_6, worst quality, low quality, bad anatomy, bad hands, jpeg artifacts, watermark, signature, blurry" },
+  sdxl:  { q: "masterpiece, best quality, amazing quality, very aesthetic, absurdres", n: "lowres, worst quality, bad quality, bad anatomy, bad hands, extra digits, fewer digits, jpeg artifacts, signature, watermark, username, blurry" },
+  anima: { q: "masterpiece, best quality, score_7", n: "worst quality, low quality, score_1, score_2, score_3, artist name, blurry, jpeg artifacts, chromatic aberration" },
+  klein: { q: "", n: "blurry, low quality, deformed hands, extra fingers, bad anatomy, watermark, text" },
+  // "text" and "logo" are left out on purpose: Z-Image is the model for ads with readable text.
+  zimage: { q: "", n: "blurry, low quality, lowres, jpeg artifacts, oversaturated, overexposed, distorted anatomy, deformed hands, extra fingers, extra limbs, bad proportions, disfigured face, watermark, signature, cropped, out of frame, duplicate, ugly, noisy, grainy" },
+};
+const qualityKey = (engine, model) => engine !== "sdxl" ? engine : (/pony/i.test(model || "") ? "pony" : "sdxl");
+
+const $ = (id) => document.getElementById(id);
+const clientId = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2)) ;
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("loraLab." + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("loraLab." + k, JSON.stringify(v)); } catch {} },
+};
+
+// ---------- state ----------
+// Two workspaces (General and Adult 18+), each with its own saved state and results, so they never mix.
+// The single state saved before workspaces existed becomes the Adult workspace.
+if (!store.get("state.general", null) && !store.get("state.adult", null) && store.get("state", null)) {
+  store.set("state.adult", store.get("state", {}));
+  store.set("batches.adult", store.get("batches", []));
+}
+let mode = store.get("mode", "general") === "adult" ? "adult" : "general";
+const defaultState = () => ({
+  engine: "sdxl",
+  prompt: "1girl, solo, long silver hair, golden eyes, elegant black kimono, standing on a wooden bridge, cherry blossoms, night, lanterns, soft lighting, looking at viewer, smile",
+  size: "832x1216", w: 832, h: 1216, count: 1, seed: rand(), autoSeed: false,
+  baseline: true, showAll: false, thumb: 220, refThr: 0.35, refChars: true,
+  refUpload: null, refSize: null, useRef: false, denoise: 0.6, kleinRefMode: "reference", extraRefs: [null, null],
+  loraTab: "general",
+  charId: "", charUse: { appearance: true, outfit: true, loras: true, ref: false },
+  eng: {},
+  loras: {},
+  showGenLoras: false,
+});
+function loadWorkspace(m) {
+  const st = Object.assign(defaultState(), store.get("state." + m, {}));
+  for (const e of Object.keys(ENGINE_DEFAULTS)) st.eng[e] = Object.assign({}, ENGINE_DEFAULTS[e], st.eng[e] || {});
+  return st;
+}
+const S = loadWorkspace(mode);
+const save = () => store.set("state." + mode, S);
+const E = () => S.eng[S.engine];
+
+let lists = { checkpoints: [], diffusion_models: [], text_encoders: [], vae: [], loras: [], samplers: [], schedulers: [],
+  unet_gguf: [], unet: [], clip_gguf: [], upscale: [], bgRemoval: [] };
+let loraInfo = {};   // name -> {family, pony, tags[]}
+let batches = store.get("batches." + mode, []);   // persisted results of this workspace
+const jobs = new Map(); // prompt_id -> {batchId, idx}
+let runningId = null;
+
+function rand() { return Math.floor(Math.random() * 2 ** 32); }
+function toast(msg, ok) { const t = $("toast"); t.textContent = msg; t.className = "toast" + (ok ? " ok" : ""); t.style.display = "block"; clearTimeout(t._h); t._h = setTimeout(() => t.style.display = "none", ok ? 2500 : 7000); }
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  const txt = await r.text();
+  let body; try { body = txt ? JSON.parse(txt) : null; } catch { body = txt; }
+  if (!r.ok) { const e = new Error((body && body.error && (body.error.message || body.error)) || r.statusText); e.body = body; throw e; }
+  return body;
+}
+const post = (path, data) => api(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+const joinTags = (parts) => parts.map(p => (p || "").trim().replace(/^,+|,+$/g, "").trim()).filter(Boolean).join(", ");
+const stem = (n) => (n || "").replace(/\.[^.]+$/, "").split(/[\\/]/).pop();
+const safe = (n) => stem(n).replace(/[^A-Za-z0-9._-]+/g, "_").slice(0, 60) || "x";
+function el(tag, attrs, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (k === "class") n.className = v; else if (k === "text") n.textContent = v;
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), v); else if (v != null) n.setAttribute(k, v);
+  }
+  for (const c of kids.flat()) if (c != null) n.append(c);
+  return n;
+}
+function fillSelect(sel, items, value, labelFn) {
+  sel.innerHTML = "";
+  for (const it of items) sel.append(el("option", { value: it, text: labelFn ? labelFn(it) : it }));
+  if (value != null && items.includes(value)) sel.value = value;
+  else if (items.length) sel.value = items[0];
+}
+
+// ---------- loading lists ----------
+async function loadModels() {
+  const get = (f) => api("/models/" + f).catch(() => []);
+  // Older nodes list choices as [[...]], newer ones as ["COMBO", { options: [...] }].
+  const info = (node, input) => api("/object_info/" + node).then(d => {
+    const spec = d[node].input.required[input];
+    return Array.isArray(spec[0]) ? spec[0] : ((spec[1] || {}).options || []);
+  }).catch(() => []);
+  const [ck, dm, te, vae, ks, ug, un, cg] = await Promise.all([get("checkpoints"), get("diffusion_models"), get("text_encoders"), get("vae"),
+    api("/object_info/KSampler").catch(() => null),
+    info("UnetLoaderGGUF", "unet_name"), info("UNETLoader", "unet_name"), info("CLIPLoaderGGUF", "clip_name"),
+    info("UpscaleModelLoader", "model_name").then(v => lists.upscale = v), info("LoadBackgroundRemovalModel", "bg_removal_name").then(v => lists.bgRemoval = v)]);
+  lists.checkpoints = ck; lists.diffusion_models = dm; lists.text_encoders = te; lists.vae = vae;
+  lists.unet_gguf = ug; lists.unet = un; lists.clip_gguf = cg;
+  if (ks) { const req = ks.KSampler.input.required; lists.samplers = req.sampler_name[0]; lists.schedulers = req.scheduler[0]; }
+}
+
+// Klein 9B pairs with its Qwen3-8B encoder, Klein 4B with Qwen3-4B.
+function kleinTE(model) {
+  const want = /4b/i.test(model || "") ? /qwen_3_4b|klein-4b/i : /klein-9b|qwen_3_8b|qwen3-8b/i;
+  return lists.clip_gguf.find(n => want.test(n)) || lists.clip_gguf[0];
+}
+
+function classify(name, m) {
+  const s = m ? [m.ss_base_model_version, m["modelspec.architecture"], m.ss_network_module].join(" ").toLowerCase() : "";
+  let family = "other";
+  if (s.includes("anima") || (!m && /anima/i.test(name))) family = "anima";
+  else if (s.includes("sdxl") || s.includes("stable-diffusion-xl")) family = "sdxl";
+  else if (s.includes("sd_v1") || s.includes("stable-diffusion-v1")) family = "sd15";
+  else if (/flux2|flux\.2|flux-2|klein/.test(s) || (!m && /klein|flux2|flux-2/i.test(name))) family = "klein";
+  else if (/z[-_ ]?image|lumina2/.test(s)) family = "zimage";
+  else if (s.includes("flux")) family = "flux";
+  // No usable training info in the file: fall back to the file name.
+  if (family === "other") {
+    if (/klein|flux[-_.]?2/i.test(name)) family = "klein";
+    else if (/z[-_]?image|\bzit\b/i.test(name)) family = "zimage";
+    else if (/anima/i.test(name)) family = "anima";
+    else if (/xl|pdxl|pony|illu/i.test(name)) family = "sdxl";
+  }
+  const base = ((m && m.ss_sd_model_name) || "").toLowerCase();
+  const pony = family === "sdxl" && (base.includes("pony") || base.includes("290640") || /pdxl|pony/i.test(name));
+  let tags = [], explicitShare = 0, childShare = 0;
+  try {
+    const freq = typeof m.ss_tag_frequency === "string" ? JSON.parse(m.ss_tag_frequency) : m.ss_tag_frequency;
+    const tot = {};
+    for (const ds of Object.values(freq || {})) for (const [t, c] of Object.entries(ds)) { const k = t.trim(); if (k) tot[k] = (tot[k] || 0) + c; }
+    tags = Object.entries(tot).sort((a, b) => b[1] - a[1]).slice(0, 10).map(x => x[0]);
+    const images = Number(m.ss_num_train_images) || Math.max(1, ...Object.values(tot));
+    const share = (set) => Math.max(0, ...Object.entries(tot).filter(([t]) => set.has(normTag(t))).map(([, c]) => c)) / images;
+    explicitShare = share(EXPLICIT_TRAIN_TAGS);
+    childShare = share(CHILD_TRAIN_TAGS);
+  } catch {}
+  const adult = explicitShare >= 0.03 || ADULT_NAME_RE.test(name);
+  // Blocked: a known child character, or trained on a real share of child-related images.
+  const blocked = BLOCKED_LORAS.has(name) || childShare >= 0.05;
+  return { family, pony, tags, adult, blocked };
+}
+const EXPLICIT_TRAIN_TAGS = new Set(["nude", "completely nude", "naked", "nipples", "areolae", "areola", "pussy", "penis", "sex", "cum", "nsfw",
+  "explicit", "breasts out", "topless", "bottomless", "vaginal", "anal", "fellatio", "paizuri", "masturbation", "pubic hair", "uncensored",
+  "censored", "erection", "testicles", "ahegao", "rating explicit", "rating questionable"]);
+const CHILD_TRAIN_TAGS = new Set(["loli", "lolicon", "shota", "shotacon", "child", "kid", "toddler", "aged down", "oppai loli", "cub", "underage"]);
+const ADULT_NAME_RE = /(nsfw|hentai|nude|naked|lewd|nipple|niple|areola|panties|penis|pussy|cock|bulge|ass[_ -]?ripple|\bsex|cum\b|ahegao|porn|thicc|expressive_h|(^|[_ -])h([_ -]|\.|$))/i;
+// Sarada Uchiha (Boruto) is a child character; this LoRA was trained on explicit images of her.
+const BLOCKED_LORAS = new Set(["Dart-sarada.safetensors"]);
+let loraFlags = {}, blockedLoras = [];
+const isAdultLora = (n) => loraFlags[n] ? loraFlags[n] === "adult" : !!(loraInfo[n] || {}).adult;
+async function loadLoraFlags() {
+  try { loraFlags = (await api("/lora-lab/lora-flags")).flags || {}; } catch { loraFlags = {}; }
+}
+async function setLoraFlag(n, flag) {
+  const auto = (loraInfo[n] || {}).adult ? "adult" : "general";
+  if (flag === auto) delete loraFlags[n]; else loraFlags[n] = flag;   // matching the automatic guess clears the override
+  renderLoras();
+  try { loraFlags = (await post("/lora-lab/lora-flags", { name: n, flag: flag === auto ? null : flag })).flags || {}; }
+  catch (err) { toast(ROUTE_MISSING.test(err.message) ? "Restart LoRA Lab once so this is saved for all devices." : "Couldn't save: " + err.message); }
+}
+
+async function loadLoras() {
+  const all = await api("/models/loras").catch(() => []);
+  const missing = all.filter(n => !loraInfo[n]);
+  await Promise.all([loadLoraFlags(), ...missing.map(async n => {
+    let m = null;
+    try { m = await api("/view_metadata/loras?filename=" + encodeURIComponent(n)); } catch {}
+    loraInfo[n] = classify(n, m);
+  })]);
+  blockedLoras = all.filter(n => loraInfo[n].blocked);
+  lists.loras = all.filter(n => !loraInfo[n].blocked);
+}
+
+// ---------- settings UI ----------
+function modelList() {
+  if (S.engine === "anima") return lists.diffusion_models.filter(n => /anima/i.test(n));
+  if (S.engine === "klein") return [...new Set([...lists.unet_gguf, ...lists.unet])].filter(n => /klein/i.test(n))
+    .sort((a, b) => /9b/i.test(b) - /9b/i.test(a));
+  if (S.engine === "zimage") return [...new Set([...lists.diffusion_models, ...lists.unet_gguf])].filter(n => /z[-_]?image/i.test(n));
+  return lists.checkpoints;
+}
+
+function renderSettings() {
+  for (const b of $("engineSeg").children) b.classList.toggle("on", b.dataset.e === S.engine);
+  $("engineHint").textContent = {
+    sdxl: "Anime & illustration. Prompt with tags (1girl, long hair, …). Most LoRAs are for this.",
+    anima: "Anime. Prompt with tags. Uses Anima LoRAs.",
+    klein: "Photoreal. Write sentences. Best for editing photos and combining 2–3 reference images.",
+    zimage: "Photoreal ads & posters. Write sentences; text in \"quotes\" is rendered. Commercial-use license.",
+  }[S.engine] || "";
+  const e = E();
+  const models = modelList();
+  fillSelect($("model"), models, e.model);
+  if (!models.length) $("model").append(el("option", { value: "", text: { sdxl: "No checkpoints found", anima: "No Anima model in diffusion_models", klein: "No Klein model in diffusion_models", zimage: "No Z-Image model in diffusion_models" }[S.engine] }));
+  e.model = $("model").value;
+  $("sdxlExtra").style.display = S.engine === "sdxl" ? "" : "none";
+  $("unetExtra").style.display = S.engine === "sdxl" ? "none" : "";
+  $("schedWrap").style.display = S.engine === "klein" ? "none" : "";
+  fillSelect($("vae"), ["(from checkpoint)", ...lists.vae], e.vae || "(from checkpoint)");
+  $("clipSkip").value = e.clipSkip || "2";
+  if (S.engine === "klein") {
+    fillSelect($("te"), lists.clip_gguf, e.te || kleinTE(e.model));
+    fillSelect($("avae"), lists.vae, e.avae || lists.vae.find(n => /flux2/i.test(n)));
+  } else if (S.engine === "zimage") {
+    fillSelect($("te"), lists.text_encoders, e.te || lists.text_encoders.find(n => /qwen_3_4b/i.test(n)));
+    fillSelect($("avae"), lists.vae, e.avae || lists.vae.find(n => /^ae\./i.test(n)));
+  } else {
+    fillSelect($("te"), lists.text_encoders, e.te || lists.text_encoders.find(n => /qwen_3_06b/i.test(n)));
+    fillSelect($("avae"), lists.vae, e.avae || lists.vae.find(n => /qwen_image/i.test(n)));
+  }
+  if (S.engine !== "sdxl") { e.te = $("te").value; e.avae = $("avae").value; }
+  $("lockNote").textContent = isPhotoEngine(S.engine)
+    ? "🔒 An adults-only sentence is added to the prompt and child-related terms to the negative prompt, as in your Klein workflow."
+    : "🔒 Child-related terms are always added to the negative prompt.";
+  $("prompt").placeholder = S.engine === "zimage"
+    ? 'Studio product shot of a white sneaker on a pastel podium, soft shadows, bold headline text "RUN LIGHTER"…'
+    : S.engine === "klein" ? "A woman in a red evening dress on a balcony at night, city lights, cinematic photo…" : "1girl, solo, long silver hair, ...";
+  const qk = qualityKey(S.engine, e.model);
+  if (e.quality == null) e.quality = QUALITY[qk].q;
+  if (e.negative == null) e.negative = QUALITY[qk].n;
+  $("quality").value = e.quality; $("negative").value = e.negative;
+  $("prompt").value = S.prompt;
+  $("size").value = S.size; $("customSize").style.display = S.size === "custom" ? "" : "none";
+  $("w").value = S.w; $("h").value = S.h;
+  $("steps").value = e.steps; $("cfg").value = e.cfg; $("count").value = S.count;
+  fillSelect($("sampler"), lists.samplers.length ? lists.samplers : [e.sampler], e.sampler);
+  fillSelect($("scheduler"), lists.schedulers.length ? lists.schedulers : [e.scheduler], e.scheduler);
+  $("seed").value = S.seed; $("autoSeed").checked = S.autoSeed;
+  $("baseline").checked = S.baseline; $("showAll").checked = S.showAll;
+  $("thumb").value = S.thumb; document.documentElement.style.setProperty("--thumb", S.thumb + "px");
+  renderLoras();
+  renderCharActive();
+  renderLibrary();
+}
+
+function loraState(n) {
+  if (!S.loras[n]) S.loras[n] = { on: false, strength: null, triggers: DEFAULT_TRIGGERS[n] || "" };
+  return S.loras[n];
+}
+const compatible = (n) => (loraInfo[n] || {}).family === S.engine;
+
+function renderLoras() {
+  const box = $("loraList"); box.innerHTML = "";
+  const f = $("loraFilter").value.trim().toLowerCase();
+  const names = lists.loras.filter(n => loraVisible(n) && (!f || n.toLowerCase().includes(f)));
+  const comp = names.filter(compatible), other = names.filter(n => !compatible(n));
+  const shown = S.showAll ? [...comp, ...other] : comp;
+  const ticked = selectedLoras().length;
+  $("loraCount").textContent = `(${lists.loras.filter(n => compatible(n) && loraVisible(n)).length} for ${ENGINE_LABEL[S.engine]}${ticked ? ` · ${ticked} ticked` : ""})`;
+  $("showGenLoras").checked = !!S.showGenLoras;
+  const notes = [];
+  if (blockedLoras.length) notes.push(`${blockedLoras.length} LoRA${blockedLoras.length > 1 ? "s" : ""} blocked (child-related training data): ${blockedLoras.map(stem).join(", ")}`);
+  $("loraTabNote").textContent = notes.join(" · ");
+  $("loraTabNote").style.display = notes.length ? "" : "none";
+  if (!shown.length) box.append(el("div", { class: "hint", text: lists.loras.length ? "No LoRAs here for this model type." : "No LoRAs found in models/loras." }));
+  for (const n of shown) {
+    const info = loraInfo[n] || { family: "other", tags: [] };
+    const st = loraState(n), ok = compatible(n);
+    const sel = ok && st.on;
+    const strength = st.strength ?? ENGINE_DEFAULTS[S.engine].strength;
+    const badges = [el("span", { class: "badge " + info.family, text: { sdxl: "SDXL", anima: "Anima", klein: "Klein", sd15: "SD1.5", flux: "Flux.1" }[info.family] || "other" })];
+    if (info.pony) badges.push(el("span", { class: "badge pony", text: "Pony", title: "Trained on Pony V6 — works best with Pony-based checkpoints" }));
+    const trig = el("input", { type: "text", placeholder: "Trigger words for this LoRA (added to prompt)", value: st.triggers || "",
+      oninput: (ev) => { st.triggers = ev.target.value; save(); } });
+    const card = el("div", { class: "lora" + (sel ? " sel" : "") + (ok ? "" : " off"), title: ok ? n : `${n}\nMade for ${info.family}, not ${S.engine} — can't be used here.` },
+      el("div", { class: "top" },
+        el("input", Object.assign({ type: "checkbox", onchange: (ev) => { st.on = ev.target.checked; save(); renderLoras(); updateSummary(); } },
+          ok ? {} : { disabled: "" }, sel ? { checked: "" } : {})),
+        el("span", { class: "name", text: stem(n) }),
+        ...badges,
+        el("button", { class: "r18" + (isAdultLora(n) ? " on" : ""), text: "18+",
+          title: (isAdultLora(n) ? "Adult LoRA — click to move it to the General workspace" : "General LoRA — click to move it to the Adult 18+ workspace")
+            + (loraFlags[n] ? " (set by you)" : " (detected from its training tags/name)"),
+          onclick: () => setLoraFlag(n, isAdultLora(n) ? "general" : "adult") }),
+        el("input", { type: "number", class: "str", min: "-2", max: "3", step: "0.05", value: strength, title: "Strength",
+          oninput: (ev) => { st.strength = parseFloat(ev.target.value); save(); } })),
+      el("div", { class: "more" }, trig,
+        info.tags.length ? el("div", { class: "tags" }, el("span", { class: "hint", text: "Trained tags:" }),
+          info.tags.map(t => el("span", { class: "tag", text: t, title: "Add to trigger words",
+            onclick: () => { const cur = trig.value.split(",").map(s => s.trim()).filter(Boolean); if (!cur.includes(t)) cur.push(t); trig.value = cur.join(", "); st.triggers = trig.value; save(); } }))) : null));
+    box.append(card);
+  }
+  updateSummary();
+}
+
+function selectedLoras() { return lists.loras.filter(n => compatible(n) && loraVisible(n) && loraState(n).on); }
+// General never lists or runs adult LoRAs; Adult lists adult LoRAs (plus General ones if asked).
+const loraAllowed = (n) => mode === "adult" || !isAdultLora(n);
+const loraVisible = (n) => mode === "adult" ? (isAdultLora(n) || !!S.showGenLoras) : !isAdultLora(n);
+function runs() { return [...(S.baseline ? [null] : []), ...selectedLoras()]; }
+function updateSummary() {
+  const r = runs().length, c = Math.max(1, S.count | 0);
+  $("summary").textContent = r ? `${r} column${r > 1 ? "s" : ""} × ${c} image${c > 1 ? "s" : ""} = ${r * c} image${r * c > 1 ? "s" : ""}${activeChar() ? " · 👤 " + activeChar().name : ""}${refActive() ? (extraRefsActive().length ? ` · ${1 + extraRefsActive().length} reference images` : " · from reference image") : ""}` : "Tick at least one LoRA, or \"Include a No LoRA image\"";
+  $("generate").disabled = $("generate2").disabled = !r;
+}
+
+function bindSettings() {
+  $("engineSeg").addEventListener("click", (ev) => { const e = ev.target.dataset.e; if (e && e !== S.engine) { S.engine = e; save(); renderSettings(); } });
+  $("model").addEventListener("change", () => {
+    const e = E(), oldK = qualityKey(S.engine, e.model), newK = qualityKey(S.engine, $("model").value);
+    if (oldK !== newK) {   // swap quality/negative defaults only if the user hasn't customised them
+      if (e.quality === QUALITY[oldK].q) e.quality = QUALITY[newK].q;
+      if (e.negative === QUALITY[oldK].n) e.negative = QUALITY[newK].n;
+    }
+    e.model = $("model").value;
+    if (S.engine === "klein") e.te = kleinTE(e.model);
+    save(); renderSettings();
+  });
+  const bindE = (id, key, conv = (v) => v) => $(id).addEventListener("change", () => { E()[key] = conv($(id).value); save(); });
+  bindE("vae", "vae"); bindE("clipSkip", "clipSkip"); bindE("te", "te"); bindE("avae", "avae");
+  bindE("steps", "steps", Number); bindE("cfg", "cfg", Number); bindE("sampler", "sampler"); bindE("scheduler", "scheduler");
+  $("quality").addEventListener("input", () => { E().quality = $("quality").value; save(); });
+  $("negative").addEventListener("input", () => { E().negative = $("negative").value; save(); });
+  $("qualityReset").onclick = () => { E().quality = QUALITY[qualityKey(S.engine, E().model)].q; save(); renderSettings(); };
+  $("negReset").onclick = () => { E().negative = QUALITY[qualityKey(S.engine, E().model)].n; save(); renderSettings(); };
+  $("prompt").addEventListener("input", () => { S.prompt = $("prompt").value; save(); });
+  $("size").addEventListener("change", () => {
+    S.size = $("size").value;
+    if (S.size !== "custom") { const [w, h] = S.size.split("x").map(Number); S.w = w; S.h = h; }
+    save(); renderSettings();
+  });
+  $("w").addEventListener("change", () => { S.w = Number($("w").value); save(); });
+  $("h").addEventListener("change", () => { S.h = Number($("h").value); save(); });
+  $("count").addEventListener("input", () => { S.count = Math.min(16, Math.max(1, Number($("count").value) || 1)); save(); updateSummary(); });
+  $("seed").addEventListener("change", () => { S.seed = Math.max(0, Number($("seed").value) || 0); save(); });
+  $("dice").onclick = () => { S.seed = rand(); $("seed").value = S.seed; save(); };
+  $("autoSeed").onchange = () => { S.autoSeed = $("autoSeed").checked; save(); };
+  $("baseline").onchange = () => { S.baseline = $("baseline").checked; save(); updateSummary(); };
+  $("showAll").onchange = () => { S.showAll = $("showAll").checked; save(); renderLoras(); };
+  $("loraFilter").addEventListener("input", renderLoras);
+  $("selAll").onclick = () => { for (const n of lists.loras) if (compatible(n) && loraVisible(n)) loraState(n).on = true; save(); renderLoras(); };
+  $("selNone").onclick = () => { for (const n of lists.loras) if (compatible(n) && loraVisible(n)) loraState(n).on = false; save(); renderLoras(); };
+  $("showGenLoras").onchange = () => { S.showGenLoras = $("showGenLoras").checked; save(); renderLoras(); };
+  $("reloadLoras").onclick = async () => { await Promise.all([loadModels(), loadLoras()]); renderSettings(); toast("Model lists refreshed", true); };
+  $("thumb").addEventListener("input", () => { S.thumb = Number($("thumb").value); document.documentElement.style.setProperty("--thumb", S.thumb + "px"); save(); });
+}
+
+// ---------- workflow ----------
+// Adds LoadImage -> resize -> VAEEncode for the reference image and returns the latent link.
+// toOutputSize: crop/scale to the chosen output size (img2img); otherwise ~1 MP at its own shape (Klein reference).
+// base: first node id to use, so several reference images can share one graph.
+function refLatent(g, vae, toOutputSize, r, base = 20) {
+  const [load, scale, enc] = [base, base + 1, base + 2].map(String);
+  g[load] = { class_type: "LoadImage", inputs: { image: r.subfolder ? `${r.subfolder}/${r.name}` : r.name } };
+  g[scale] = toOutputSize
+    ? { class_type: "ImageScale", inputs: { image: [load, 0], upscale_method: "lanczos", width: S.w, height: S.h, crop: "center" } }
+    : { class_type: "ImageScaleToTotalPixels", inputs: { image: [load, 0], upscale_method: "lanczos", megapixels: 1.0, resolution_steps: 16 } };
+  g[enc] = { class_type: "VAEEncode", inputs: { pixels: [scale, 0], vae } };
+  return [enc, 0];
+}
+// Extra Klein reference images (e.g. the top and bottom garment for virtual try-on), in slot order.
+const extraRefsActive = () => S.engine === "klein" && S.kleinRefMode === "reference" && !!activeRef()
+  ? (S.extraRefs || []).filter(Boolean) : [];
+// The active character's reference image wins over the Reference image panel.
+function activeRef() {
+  if (charRefOn()) return activeChar().ref;
+  return S.useRef && S.refUpload ? S.refUpload : null;
+}
+const refActive = () => !!activeRef();
+
+// Character LoRAs (when enabled and made for this model type) followed by the column's LoRA.
+function loraChain(lora) {
+  const ch = activeChar(), out = [];
+  if (ch && S.charUse.loras) for (const l of ch.loras) if (compatible(l.name) && loraAllowed(l.name) && !(loraInfo[l.name] || {}).blocked) out.push({ name: l.name, strength: l.strength });
+  if (lora && !out.some(l => l.name === lora)) out.push({ name: lora, strength: loraState(lora).strength ?? ENGINE_DEFAULTS[S.engine].strength });
+  return out;
+}
+function charPromptParts() {
+  const ch = activeChar();
+  if (!ch) return [];
+  return [ch.triggers, S.charUse.appearance ? ch.appearance : "", S.charUse.outfit ? ch.outfit : ""];
+}
+
+function buildGraph(lora, seed, prefix) {
+  const e = E();
+  const ref = activeRef();
+  const chain = loraChain(lora);
+  const triggers = chain.map(l => loraState(l.name).triggers);
+  const klein = S.engine === "klein", zimage = S.engine === "zimage", photo = isPhotoEngine(S.engine);
+  const pos = photo
+    ? [joinTags([e.quality, ...triggers, ...charPromptParts(), S.prompt]).replace(/([^.!?])$/, "$1."), KLEIN_POS_GUARD].filter(Boolean).join(" ")
+    : joinTags([e.quality, ...triggers, ...charPromptParts(), S.prompt, POS_GUARD]);
+  const ch = activeChar();
+  const neg = joinTags([e.negative, ch && ch.negative, photo ? KLEIN_NEG_GUARD : NEG_GUARD]);
+  const g = {};
+  let model, clip, vae;
+  // Chains LoRA loaders; SDXL LoRAs also patch the text encoder.
+  const addLoras = (withClip) => chain.forEach((l, i) => {
+    const id = String(30 + i);
+    g[id] = withClip
+      ? { class_type: "LoraLoader", inputs: { model, clip, lora_name: l.name, strength_model: l.strength, strength_clip: l.strength } }
+      : { class_type: "LoraLoaderModelOnly", inputs: { model, lora_name: l.name, strength_model: l.strength } };
+    model = [id, 0];
+    if (withClip) clip = [id, 1];
+  });
+  if (klein) {
+    g["1"] = /\.gguf$/i.test(e.model)
+      ? { class_type: "UnetLoaderGGUF", inputs: { unet_name: e.model } }
+      : { class_type: "UNETLoader", inputs: { unet_name: e.model, weight_dtype: "default" } };
+    g["3"] = { class_type: "CLIPLoaderGGUF", inputs: { clip_name: e.te, type: "flux2" } };
+    g["4"] = { class_type: "VAELoader", inputs: { vae_name: e.avae } };
+    model = ["1", 0]; clip = ["3", 0]; vae = ["4", 0];
+    addLoras(false);
+    g["5"] = { class_type: "CLIPTextEncode", inputs: { text: pos, clip } };
+    g["6"] = { class_type: "CLIPTextEncode", inputs: { text: neg, clip } };
+    let positive = ["5", 0], negative = ["6", 0], latent, sigmas;
+    let steps = Number(e.steps);
+    if (ref && S.kleinRefMode === "img2img") {
+      // Keep the number of steps actually run close to the setting after the denoise split.
+      steps = Math.max(steps, Math.round(steps / S.denoise));
+      latent = refLatent(g, vae, true, ref);
+      g["25"] = { class_type: "SplitSigmasDenoise", inputs: { sigmas: ["11", 0], denoise: S.denoise } };
+      sigmas = ["25", 1];
+    } else {
+      if (ref) {   // native reference: the images condition the prompt instead of being the starting latent
+        [ref, ...extraRefsActive()].forEach((r, i) => {
+          const refLat = refLatent(g, vae, false, r, 50 + i * 5);
+          const p = String(53 + i * 5), n = String(54 + i * 5);
+          g[p] = { class_type: "ReferenceLatent", inputs: { conditioning: positive, latent: refLat } };
+          g[n] = { class_type: "ReferenceLatent", inputs: { conditioning: negative, latent: refLat } };
+          positive = [p, 0]; negative = [n, 0];
+        });
+      }
+      g["7"] = { class_type: "EmptyFlux2LatentImage", inputs: { width: S.w, height: S.h, batch_size: 1 } };
+      latent = ["7", 0]; sigmas = ["11", 0];
+    }
+    g["11"] = { class_type: "Flux2Scheduler", inputs: { steps, width: S.w, height: S.h } };
+    g["12"] = { class_type: "CFGGuider", inputs: { model, positive, negative, cfg: Number(e.cfg) } };
+    g["13"] = { class_type: "KSamplerSelect", inputs: { sampler_name: e.sampler } };
+    g["14"] = { class_type: "RandomNoise", inputs: { noise_seed: seed } };
+    g["8"] = { class_type: "SamplerCustomAdvanced", inputs: { noise: ["14", 0], guider: ["12", 0], sampler: ["13", 0], sigmas, latent_image: latent } };
+    g["9"] = { class_type: "VAEDecode", inputs: { samples: ["8", 0], vae } };
+    g["10"] = { class_type: "SaveImage", inputs: { filename_prefix: prefix, images: ["9", 0] } };
+    return { graph: g };
+  }
+  if (S.engine === "sdxl") {
+    g["1"] = { class_type: "CheckpointLoaderSimple", inputs: { ckpt_name: e.model } };
+    model = ["1", 0]; clip = ["1", 1]; vae = ["1", 2];
+    addLoras(true);
+    g["3"] = { class_type: "CLIPSetLastLayer", inputs: { clip, stop_at_clip_layer: -Number(e.clipSkip || 2) } };
+    clip = ["3", 0];
+    if (e.vae && e.vae !== "(from checkpoint)") { g["4"] = { class_type: "VAELoader", inputs: { vae_name: e.vae } }; vae = ["4", 0]; }
+  } else {   // Anima and Z-Image: separate diffusion model, text encoder and VAE
+    g["1"] = /\.gguf$/i.test(e.model)
+      ? { class_type: "UnetLoaderGGUF", inputs: { unet_name: e.model } }
+      : { class_type: "UNETLoader", inputs: { unet_name: e.model, weight_dtype: "default" } };
+    g["3"] = { class_type: "CLIPLoader", inputs: { clip_name: e.te, type: zimage ? "lumina2" : "stable_diffusion", device: "default" } };
+    g["4"] = { class_type: "VAELoader", inputs: { vae_name: e.avae } };
+    model = ["1", 0]; clip = ["3", 0]; vae = ["4", 0];
+    addLoras(false);
+    if (zimage) { g["15"] = { class_type: "ModelSamplingAuraFlow", inputs: { model, shift: 3 } }; model = ["15", 0]; }
+  }
+  g["5"] = { class_type: "CLIPTextEncode", inputs: { text: pos, clip } };
+  g["6"] = { class_type: "CLIPTextEncode", inputs: { text: neg, clip } };
+  let latent = ["7", 0];
+  if (ref) latent = refLatent(g, vae, true, ref);
+  else g["7"] = { class_type: zimage ? "EmptySD3LatentImage" : "EmptyLatentImage", inputs: { width: S.w, height: S.h, batch_size: 1 } };
+  g["8"] = { class_type: "KSampler", inputs: { model, positive: ["5", 0], negative: ["6", 0], latent_image: latent,
+    seed, steps: Number(e.steps), cfg: Number(e.cfg), sampler_name: e.sampler, scheduler: e.scheduler, denoise: ref ? S.denoise : 1 } };
+  g["9"] = { class_type: "VAEDecode", inputs: { samples: ["8", 0], vae } };
+  g["10"] = { class_type: "SaveImage", inputs: { filename_prefix: prefix, images: ["9", 0] } };
+  return { graph: g };
+}
+
+function nodeErrorText(body) {
+  if (!body) return "Unknown error";
+  const parts = [];
+  if (body.error) parts.push(body.error.message + (body.error.details ? ": " + body.error.details : ""));
+  for (const ne of Object.values(body.node_errors || {})) for (const er of ne.errors || []) parts.push(`${ne.class_type}: ${er.message}${er.details ? " — " + er.details : ""}`);
+  return parts.join("\n") || JSON.stringify(body).slice(0, 300);
+}
+
+async function generate() {
+  const r = runs();
+  if (!r.length) return;
+  const e = E();
+  if (!e.model) return toast("No model selected.");
+  if (S.autoSeed) { S.seed = rand(); $("seed").value = S.seed; save(); }
+  const count = Math.max(1, S.count | 0), seed0 = S.seed;
+  const day = new Date().toISOString().slice(0, 10);
+  const batch = {
+    id: Date.now(), engine: S.engine, model: e.model, prompt: S.prompt, w: S.w, h: S.h, steps: e.steps, cfg: e.cfg,
+    sampler: e.sampler, scheduler: e.scheduler, seed: seed0, count,
+    ref: refActive() ? { upload: activeRef(), denoise: S.denoise, mode: S.engine === "klein" ? S.kleinRefMode : "img2img", fromChar: charRefOn(),
+      extra: extraRefsActive().length } : null,
+    charId: activeChar() ? activeChar().id : null, charName: activeChar() ? activeChar().name : null,
+    charUse: activeChar() ? Object.assign({}, S.charUse) : null, charLoras: loraChain(null).length, mode,
+    cols: r.map(l => ({ lora: l, strength: l ? (loraState(l).strength ?? ENGINE_DEFAULTS[S.engine].strength) : null })),
+    cells: [],
+  };
+  for (let i = 0; i < count; i++) for (const c of batch.cols) batch.cells.push({ lora: c.lora, seed: (seed0 + i) % 2 ** 32, status: "queued" });
+  rememberForChar();
+  batches.unshift(batch);
+  if (batches.length > 30) batches.length = 30;
+  renderResults();
+  $("generate").disabled = true;
+  try {
+    for (let idx = 0; idx < batch.cells.length; idx++) {
+      const cell = batch.cells[idx];
+      const prefix = `LoRA-Lab/${day}/${batch.charName ? safe(batch.charName) + "/" : ""}${S.engine}_${cell.lora ? safe(cell.lora) : "no-lora"}`;
+      const { graph } = buildGraph(cell.lora, cell.seed, prefix);
+      try {
+        const res = await post("/prompt", { prompt: graph, client_id: clientId });
+        cell.pid = res.prompt_id;
+        jobs.set(res.prompt_id, { batchId: batch.id, idx });
+      } catch (err) {
+        cell.status = "error"; cell.error = nodeErrorText(err.body) || err.message;
+        updateCell(batch, idx);
+        if (idx === 0) { toast("ComfyUI rejected the job:\n" + cell.error); for (let j = 1; j < batch.cells.length; j++) { batch.cells[j].status = "error"; batch.cells[j].error = "Skipped"; updateCell(batch, j); } break; }
+      }
+    }
+  } finally {
+    saveBatches(); updateSummary();
+  }
+}
+
+// ---------- results ----------
+function saveBatches() {
+  store.set("batches." + mode, batches.map(b => Object.assign({}, b, {
+    cells: b.cells.map(c => ({ lora: c.lora, seed: c.seed, image: c.image, error: c.error,
+      status: c.image ? "done" : (c.status === "error" ? "error" : (c.pid ? c.status : "error")), pid: c.pid })) })));
+}
+const imgUrl = (im) => `/view?filename=${encodeURIComponent(im.filename)}&subfolder=${encodeURIComponent(im.subfolder || "")}&type=${im.type || "output"}`;
+const colLabel = (c, b) => c.lora ? `${stem(c.lora)} @ ${c.strength}` : (b && b.charLoras ? "No extra LoRA" : "No LoRA");
+
+// Finished images of a character batch also go into that character's gallery.
+function imageDone(b, c) {
+  if (!b.charId || c.charPosted || !c.image) return;
+  c.charPosted = true;
+  post("/lora-lab/characters/image", { id: b.charId, image: c.image, seed: c.seed, lora: c.lora, model: b.model, engine: b.engine, mode: b.mode || "adult" })
+    .then((entry) => {
+      const ch = chars.find(x => x.id === b.charId);
+      if (ch) { ch.images = (ch.images || []).concat(entry); if (ch.id === editId) renderCharGallery(); renderCharList(); }
+    })
+    .catch(() => { c.charPosted = false; });
+}
+
+function renderResults() {
+  const box = $("results"); box.innerHTML = "";
+  $("empty").style.display = batches.length ? "none" : "";
+  for (const b of batches) {
+    const n = b.cols.length;
+    const grid = el("div", { class: "grid", style: `grid-template-columns: repeat(${n}, var(--thumb)); --ar: ${b.w}/${b.h}` });
+    for (const c of b.cols) grid.append(el("div", { class: "colh", title: colLabel(c, b) }, el("b", { text: c.lora ? stem(c.lora) : colLabel(c, b) }), c.lora ? ` @ ${c.strength}` : ""));
+    b.cells.forEach((c, idx) => { const d = el("div", { class: "cell", id: `c-${b.id}-${idx}` }); grid.append(d); fillCell(d, b, idx); });
+    box.append(el("div", { class: "batch", id: "b-" + b.id },
+      el("div", { class: "bh" },
+        el("b", { text: new Date(b.id).toLocaleString() }),
+        el("span", { class: "meta", text: `${ENGINE_LABEL[b.engine] || b.engine} · ${stem(b.model)} · ${b.w}×${b.h} · ${b.steps} steps · CFG ${b.cfg} · ${b.engine === "klein" ? b.sampler : b.sampler + "/" + b.scheduler} · seed ${b.seed}${refLabel(b.ref)}${b.charName ? " · 👤 " + b.charName : ""}` }),
+        el("button", { class: "btn sm", text: "Reuse settings", onclick: () => reuse(b) }),
+        el("button", { class: "btn sm danger", text: "Remove", onclick: () => { batches = batches.filter(x => x !== b); saveBatches(); renderResults(); } }),
+        el("span", { class: "p", text: b.prompt, title: b.prompt })),
+      el("div", { class: "gridwrap" }, grid)));
+  }
+  updateProgress();
+}
+
+function fillCell(d, b, idx) {
+  const c = b.cells[idx];
+  d.innerHTML = "";
+  if (c.image) {
+    d.append(el("img", { src: imgUrl(c.image), loading: "lazy", alt: colLabel(b.cols.find(x => x.lora === c.lora), b),
+      onclick: () => openLb(b, idx) }), el("span", { class: "seed", text: c.seed }));
+  } else if (c.status === "error") {
+    d.append(el("div", { class: "st err", text: c.error || "Failed", title: c.error || "" }));
+  } else {
+    if (c.preview) d.append(el("img", { class: "preview", src: c.preview, alt: "" }));
+    d.append(el("div", { class: "st", text: c.status === "running" ? "Generating…" : c.status === "cancelled" ? "Cancelled" : "Queued" }));
+    const bar = el("div", { class: "bar" }); bar.style.width = (c.progress || 0) * 100 + "%"; d.append(bar);
+    if (c.preview) d.querySelector(".st").style.display = "none";
+  }
+}
+function updateCell(b, idx) { const d = document.getElementById(`c-${b.id}-${idx}`); if (d) fillCell(d, b, idx); updateProgress(); }
+
+function updateProgress() {
+  let pend = 0, done = 0;
+  for (const b of batches) for (const c of b.cells) { if (c.image) done++; else if (c.pid && (c.status === "queued" || c.status === "running")) pend++; }
+  $("progressText").textContent = pend ? `${pend} image${pend > 1 ? "s" : ""} in progress…` : (batches.length ? `${done} images` : "");
+}
+
+function reuse(b) {
+  S.engine = b.engine; const e = E();
+  Object.assign(e, { model: b.model, steps: b.steps, cfg: b.cfg, sampler: b.sampler, scheduler: b.scheduler });
+  Object.assign(S, { prompt: b.prompt, w: b.w, h: b.h, seed: b.seed, count: b.count, baseline: b.cols.some(c => !c.lora) });
+  const ch = b.charId && chars.find(x => x.id === b.charId);
+  S.charId = ch ? ch.id : "";
+  if (ch && b.charUse) S.charUse = Object.assign({}, b.charUse);
+  if (b.ref && !b.ref.fromChar) { Object.assign(S, { useRef: true, refUpload: b.ref.upload, denoise: b.ref.denoise }); if (b.ref.mode !== "img2img") S.kleinRefMode = b.ref.mode; showStoredRef(); }
+  else { S.useRef = false; if (b.ref) { S.denoise = b.ref.denoise; if (b.ref.mode !== "img2img") S.kleinRefMode = b.ref.mode; } }
+  S.size = [...$("size").options].some(o => o.value === `${b.w}x${b.h}`) ? `${b.w}x${b.h}` : "custom";
+  for (const n of lists.loras) loraState(n).on = false;
+  for (const c of b.cols) if (c.lora) { const st = loraState(c.lora); st.on = true; st.strength = c.strength; }
+  save(); renderSettings(); toast("Settings loaded from that batch", true);
+}
+
+function findJob(pid) {
+  const j = jobs.get(pid); if (!j) return null;
+  const b = batches.find(x => x.id === j.batchId); if (!b) return null;
+  return { b, idx: j.idx, c: b.cells[j.idx] };
+}
+
+async function fetchHistory(pid) {
+  const f = findJob(pid); if (!f || f.c.image) return;
+  try {
+    const h = await api("/history/" + encodeURIComponent(pid));
+    const entry = h && h[pid]; if (!entry) return;
+    for (const out of Object.values(entry.outputs || {})) for (const im of out.images || []) if (im.type === "output") { f.c.image = im; break; }
+    if (f.c.image) { f.c.status = "done"; jobs.delete(pid); imageDone(f.b, f.c); }
+    else if (entry.status && entry.status.status_str === "error") {
+      f.c.status = "error";
+      const m = (entry.status.messages || []).find(x => x[0] === "execution_error");
+      f.c.error = m ? m[1].exception_message : "Failed"; jobs.delete(pid);
+    }
+    updateCell(f.b, f.idx); saveBatches();
+  } catch {}
+}
+
+// ---------- websocket ----------
+let ws, wsTries = 0;
+function connect() {
+  ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws?clientId=${encodeURIComponent(clientId)}`);
+  ws.binaryType = "arraybuffer";
+  ws.onopen = () => { wsTries = 0; $("dot").classList.add("on"); $("conn").textContent = "Connected to ComfyUI"; for (const pid of [...jobs.keys()]) fetchHistory(pid); };
+  ws.onclose = () => { $("dot").classList.remove("on"); $("conn").textContent = "Disconnected — retrying…"; setTimeout(connect, Math.min(10000, 1000 * ++wsTries)); };
+  ws.onmessage = (ev) => {
+    if (typeof ev.data !== "string") return onBinary(ev.data);
+    let msg; try { msg = JSON.parse(ev.data); } catch { return; }
+    const d = msg.data || {}, f = d.prompt_id ? findJob(d.prompt_id) : null;
+    switch (msg.type) {
+      case "status": { const q = d.status && d.status.exec_info ? d.status.exec_info.queue_remaining : null; $("queueInfo").textContent = q ? `Queue: ${q}` : ""; break; }
+      case "execution_start": runningId = d.prompt_id; if (f) { f.c.status = "running"; updateCell(f.b, f.idx); } break;
+      case "progress": if (f && d.max) { f.c.status = "running"; f.c.progress = d.value / d.max;
+        const bar = document.querySelector(`#c-${f.b.id}-${f.idx} .bar`); if (bar) bar.style.width = f.c.progress * 100 + "%"; else updateCell(f.b, f.idx); } break;
+      case "executed": if (f && d.output && d.output.images) { const im = d.output.images.find(x => x.type === "output"); if (im) { f.c.image = im; f.c.status = "done"; f.c.preview = null; updateCell(f.b, f.idx); saveBatches(); imageDone(f.b, f.c); } } break;
+      case "execution_success": if (f) { if (!f.c.image) fetchHistory(d.prompt_id); else jobs.delete(d.prompt_id); } if (runningId === d.prompt_id) runningId = null; break;
+      case "executing": if (f && d.node == null) { if (!f.c.image) fetchHistory(d.prompt_id); else jobs.delete(d.prompt_id); } break;
+      case "execution_error": if (f) { f.c.status = "error"; f.c.error = (d.exception_type ? d.exception_type + ": " : "") + (d.exception_message || "Failed");
+        jobs.delete(d.prompt_id); updateCell(f.b, f.idx); saveBatches(); toast(f.c.error); } break;
+      case "execution_interrupted": if (f) { f.c.status = "error"; f.c.error = "Cancelled"; jobs.delete(d.prompt_id); updateCell(f.b, f.idx); saveBatches(); } break;
+    }
+  };
+}
+let lastPreviewUrl = null;
+function onBinary(buf) {
+  try {
+    const dv = new DataView(buf), type = dv.getUint32(0);
+    let blob, pid = runningId;
+    if (type === 1) blob = new Blob([buf.slice(8)], { type: dv.getUint32(4) === 2 ? "image/png" : "image/jpeg" });
+    else if (type === 4) {
+      const len = dv.getUint32(4), meta = JSON.parse(new TextDecoder().decode(buf.slice(8, 8 + len)));
+      pid = meta.prompt_id || pid; blob = new Blob([buf.slice(8 + len)], { type: meta.image_type || "image/jpeg" });
+    } else return;
+    const f = pid && findJob(pid); if (!f || f.c.image) return;
+    if (lastPreviewUrl) URL.revokeObjectURL(lastPreviewUrl);
+    f.c.preview = lastPreviewUrl = URL.createObjectURL(blob);
+    const d = document.getElementById(`c-${f.b.id}-${f.idx}`);
+    const img = d && d.querySelector("img.preview");
+    if (img) img.src = f.c.preview; else updateCell(f.b, f.idx);
+  } catch {}
+}
+// Fallback in case a websocket message is missed.
+setInterval(() => { for (const pid of jobs.keys()) { const f = findJob(pid); if (f && !f.c.image) fetchHistory(pid); } }, 8000);
+
+// ---------- lightbox ----------
+// Items: { image, label, seed }
+let lbList = [], lbPos = 0;
+function openLbItems(items, pos) {
+  if (!items.length) return;
+  lbList = items; lbPos = Math.max(0, Math.min(pos, items.length - 1));
+  showLb(); $("lb").classList.add("on");
+}
+function openLb(b, idx) {
+  const done = b.cells.filter(c => c.image);
+  openLbItems(done.map(c => ({ image: c.image, label: colLabel(b.cols.find(x => x.lora === c.lora), b), seed: c.seed })), done.indexOf(b.cells[idx]));
+}
+function showLb() {
+  const it = lbList[lbPos];
+  $("lbImg").src = imgUrl(it.image);
+  $("lbCap").innerHTML = "";
+  $("lbCap").append(el("b", { text: it.label, style: "color:var(--text)" }), it.seed != null ? el("span", { text: `seed ${it.seed}` }) : null,
+    el("span", { text: `${lbPos + 1} / ${lbList.length}` }),
+    el("a", { href: imgUrl(it.image), target: "_blank", text: "Open full size" }),
+    el("a", { href: imgUrl(it.image), download: it.image.filename, text: "Download" }),
+    el("div", { class: "tools" },
+      el("button", { class: "btn sm", text: "⤢ Upscale 4×", title: "Real-ESRGAN 4× upscale (about a minute)", onclick: (ev) => runImageTool("upscale", ev.currentTarget) }),
+      el("button", { class: "btn sm", text: "✂ Remove background", title: "BiRefNet cut-out with a transparent background", onclick: (ev) => runImageTool("cutout", ev.currentTarget) })));
+}
+
+// One-off post-processing on the image shown in the lightbox; the result is inserted right after it.
+async function runImageTool(kind, btn) {
+  const it = lbList[lbPos]; if (!it) return;
+  const im = it.image;
+  const src = `${im.subfolder ? im.subfolder + "/" : ""}${im.filename} [${im.type === "input" ? "input" : "output"}]`;
+  const g = { "1": { class_type: "LoadImage", inputs: { image: src } } };
+  let label;
+  if (kind === "upscale") {
+    const m = lists.upscale.find(n => /esrgan/i.test(n)) || lists.upscale[0];
+    if (!m) return toast("No upscale model found in models/upscale_models.");
+    g["2"] = { class_type: "UpscaleModelLoader", inputs: { model_name: m } };
+    g["3"] = { class_type: "ImageUpscaleWithModel", inputs: { upscale_model: ["2", 0], image: ["1", 0] } };
+    g["9"] = { class_type: "SaveImage", inputs: { filename_prefix: "LoRA-Lab/upscaled/" + safe(im.filename), images: ["3", 0] } };
+    label = "4× upscaled";
+  } else {
+    const m = lists.bgRemoval.find(n => /birefnet/i.test(n)) || lists.bgRemoval[0];
+    if (!m) return toast("No background removal model found in models/background_removal.");
+    g["2"] = { class_type: "LoadBackgroundRemovalModel", inputs: { bg_removal_name: m } };
+    g["3"] = { class_type: "RemoveBackground", inputs: { bg_removal_model: ["2", 0], image: ["1", 0] } };
+    // JoinImageWithAlpha inverts its mask (LoadImage convention), so invert the foreground mask first.
+    g["4"] = { class_type: "InvertMask", inputs: { mask: ["3", 0] } };
+    g["5"] = { class_type: "JoinImageWithAlpha", inputs: { image: ["1", 0], alpha: ["4", 0] } };
+    g["9"] = { class_type: "SaveImage", inputs: { filename_prefix: "LoRA-Lab/cutouts/" + safe(im.filename), images: ["5", 0] } };
+    label = "background removed";
+  }
+  const old = btn.textContent;
+  btn.disabled = true; btn.textContent = "Working…";
+  try {
+    const res = await post("/prompt", { prompt: g, client_id: clientId });
+    const image = await waitForImage(res.prompt_id);
+    lbList.splice(lbPos + 1, 0, { image, label: `${it.label} · ${label}`, seed: it.seed });
+    lbMove(1);
+    toast(kind === "upscale" ? "Upscaled — saved in output/LoRA-Lab/upscaled" : "Cut-out saved in output/LoRA-Lab/cutouts (transparent PNG)", true);
+  } catch (err) {
+    toast((kind === "upscale" ? "Upscale failed: " : "Background removal failed: ") + (nodeErrorText(err.body) || err.message));
+  } finally { btn.disabled = false; btn.textContent = old; }
+}
+async function waitForImage(pid) {
+  for (let i = 0; i < 300; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+    const h = await api("/history/" + encodeURIComponent(pid)).catch(() => null);
+    const entry = h && h[pid]; if (!entry) continue;
+    for (const out of Object.values(entry.outputs || {})) for (const img of out.images || []) if (img.type === "output") return img;
+    const m = ((entry.status || {}).messages || []).find(x => x[0] === "execution_error");
+    throw new Error(m ? m[1].exception_message : "No image was produced");
+  }
+  throw new Error("Timed out");
+}
+const lbMove = (d) => { if (lbList.length) { lbPos = (lbPos + d + lbList.length) % lbList.length; showLb(); } };
+$("lbPrev").onclick = () => lbMove(-1); $("lbNext").onclick = () => lbMove(1);
+$("lbX").onclick = () => $("lb").classList.remove("on");
+$("lb").addEventListener("click", (ev) => { if (ev.target.id === "lb") $("lb").classList.remove("on"); });
+document.addEventListener("keydown", (ev) => {
+  if (!$("lb").classList.contains("on")) { if ((ev.ctrlKey || ev.metaKey) && ev.key === "Enter") generate(); return; }
+  if (ev.key === "Escape") $("lb").classList.remove("on"); else if (ev.key === "ArrowLeft") lbMove(-1); else if (ev.key === "ArrowRight") lbMove(1);
+});
+
+// ---------- reference image -> prompt ----------
+const REF_BLOCK = new Set(["loli", "shota", "child", "female child", "male child", "kid", "toddler", "baby", "aged down", "underage",
+  "young child", "kindergartener", "elementary school student", "middle school student", "childlike body", "randoseru"]);
+const RATING = {
+  illustrious: { general: "general", sensitive: "sensitive", questionable: "nsfw", explicit: "explicit" },
+  pony: { general: "rating_safe", sensitive: "rating_questionable", questionable: "rating_questionable", explicit: "rating_explicit" },
+  anima: { general: "safe", sensitive: "sensitive", questionable: "nsfw", explicit: "explicit" },
+};
+const REF_TARGETS = [
+  { key: "illustrious", label: "Illustrious", engine: "sdxl", pick: [/illustrious/i, /wai|noob/i], qk: "sdxl", extra: [] },
+  { key: "pony", label: "Pony", engine: "sdxl", pick: [/pony/i], qk: "pony", extra: ["source_anime"] },
+  { key: "anima", label: "Anima", engine: "anima", pick: [/anima/i], qk: "anima", extra: [] },
+  { key: "klein", label: "Klein / Z-Image", engine: "klein", pick: [/9b/i, /klein/i], qk: "klein", extra: [] },
+];
+const COUNT_TAG = /^(\d\+?(girl|boy|other)s?|multiple (girls|boys|others)|solo|solo focus|no humans)$/;
+const DROP_TEXT = "Drop an image, paste (Ctrl+V), or click to choose";
+let refData = null, refKlein = null;
+
+function refRating() {
+  if (mode === "general") return "general";   // the General workspace always uses safe ratings
+  const r = refData.ratings; return Object.keys(r).sort((a, b) => r[b] - r[a])[0] || "general";
+}
+function adultTagSet() {
+  const set = new Set(EXPLICIT_TRAIN_TAGS);
+  if (lib) for (const c of lib.categories) if (c.adult) for (const t of c.tags) set.add(normTag(t));
+  return set;
+}
+function refBody() {
+  const banned = mode === "general" ? adultTagSet() : new Set();
+  const general = refData.general.filter(([t, p]) => p >= S.refThr && !REF_BLOCK.has(t) && !banned.has(normTag(t))).map(x => x[0]);
+  const chars = S.refChars ? refData.character.filter(([, p]) => p >= 0.85).map(x => x[0]) : [];
+  return [...general.filter(t => COUNT_TAG.test(t)), ...chars, ...general.filter(t => !COUNT_TAG.test(t))].join(", ");
+}
+function renderRef() {
+  $("refThr").value = S.refThr; $("refThrV").textContent = S.refThr.toFixed(2); $("refChars").checked = S.refChars;
+  const out = $("refOut"); out.innerHTML = "";
+  if (!refData) return;
+  for (const t of REF_TARGETS) {
+    const ta = el("textarea", { rows: "4" });
+    const extraBtns = [];
+    if (t.key === "klein") {
+      // Klein wants sentences rather than tags, so the prompt writer rewrites the tags.
+      ta.placeholder = "Klein needs sentences, not tags — press ✨ Describe to have the AI write them.";
+      ta.value = refKlein || "";
+      extraBtns.push(el("button", { class: "btn sm", text: "✨ Describe", title: "Turn these tags into a natural-language prompt with the AI prompt writer",
+        onclick: async (ev) => {
+          const b = ev.currentTarget, label = b.textContent;
+          b.disabled = true; b.textContent = "Writing…";
+          try {
+            refKlein = await askDolphin(`Write a prompt for this image. Content rating: ${refRating()}. Danbooru tags describing it: ${refBody()}`, "klein");
+            ta.value = refKlein;
+          } catch (err) { toast(dolphinError(err)); }
+          finally { b.disabled = false; b.textContent = label; }
+        } }));
+    } else {
+      ta.value = joinTags([QUALITY[t.qk].q, ...t.extra, RATING[t.key][refRating()], refBody()]);
+    }
+    out.append(el("div", { class: "rh" }, el("b", { text: t.label }), ...extraBtns,
+      el("button", { class: "btn sm", text: "Copy", onclick: async () => {
+        try { await navigator.clipboard.writeText(ta.value); } catch { ta.select(); document.execCommand("copy"); }
+        toast("Copied", true); } }),
+      el("button", { class: "btn sm", text: "Use", title: `Switch to a ${t.label} model and put this in the prompt`, onclick: () => useRef(t, ta.value) })), ta);
+  }
+  out.append(el("div", { class: "hint", text: `Detected rating: ${refRating()}. Child-related tags are never included.` }));
+}
+
+// Quality tags live in their own field, so strip them off before filling the prompt.
+function useRef(t, text) {
+  const q = QUALITY[t.qk].q;
+  let p = text.trim();
+  if (p.startsWith(q)) p = p.slice(q.length).replace(/^[\s,]+/, "");
+  S.engine = t.engine;
+  const e = E(), oldK = qualityKey(S.engine, e.model);
+  const models = modelList();
+  const m = t.pick.map(re => models.find(n => re.test(n))).find(Boolean);
+  if (m) e.model = m;
+  if (S.engine === "klein") e.te = kleinTE(e.model);
+  if (e.negative === QUALITY[oldK].n) e.negative = QUALITY[qualityKey(S.engine, e.model)].n;
+  e.quality = q;
+  S.prompt = p;
+  save(); renderSettings();
+  toast(m ? `Prompt set · model: ${stem(m)}` : `Prompt set, but no ${t.label} model was found — pick one manually.`, !!m);
+}
+
+async function analyzeRef(file, { upload = true, quiet = false } = {}) {
+  if (!file || !/^image\//.test(file.type)) return toast("That isn't an image.");
+  const img = $("refImg");
+  if (img.src.startsWith("blob:")) URL.revokeObjectURL(img.src);
+  img.src = URL.createObjectURL(file); $("drop").classList.add("has"); $("refClear").style.display = "";
+  $("dropText").textContent = "Analyzing… (the first image takes a bit longer while the tagger loads)";
+  refData = null; refKlein = null; renderRef();
+  if (upload) uploadRef(file);
+  const fd = new FormData(); fd.append("image", file, file.name || "image.png");
+  try {
+    refData = await api("/lora-lab/tag", { method: "POST", body: fd });
+    $("refControls").style.display = "";
+    renderRef();
+  } catch (err) {
+    const downloading = /downloading the image tagger \(/i.test(err.message);
+    if (!quiet) toast(ROUTE_MISSING.test(err.message) ? "The tagger isn't loaded — restart ComfyUI once."
+      : downloading ? err.message : "Tagging failed: " + err.message, downloading);
+  } finally {
+    $("dropText").textContent = "Drop or paste another image to replace";
+  }
+}
+
+// ---------- reference image as a starting point ----------
+// The image goes into ComfyUI's input/lora-lab folder so LoadImage can read it.
+async function uploadRef(file) {
+  const ext = ((/\.(png|jpe?g|webp|bmp|gif)$/i.exec(file.name || "") || [".png"])[0]).toLowerCase();
+  const fd = new FormData();
+  fd.append("image", file, `ref_${Date.now()}${ext}`);
+  fd.append("type", "input"); fd.append("subfolder", "lora-lab"); fd.append("overwrite", "true");
+  try {
+    const r = await api("/upload/image", { method: "POST", body: fd });
+    S.refUpload = { name: r.name, subfolder: r.subfolder || "" };
+    S.refSize = await imageSize(file);
+    save(); renderRefGen(); updateSummary();
+  } catch (err) { toast("Couldn't upload the reference image: " + err.message); }
+}
+function imageSize(blob) {
+  return new Promise((res) => {
+    const i = new Image(), u = URL.createObjectURL(blob);
+    i.onload = () => { res({ w: i.naturalWidth, h: i.naturalHeight }); URL.revokeObjectURL(u); };
+    i.onerror = () => { res(null); URL.revokeObjectURL(u); };
+    i.src = u;
+  });
+}
+// Same pixel count as 832×1216, at the reference's aspect ratio, in multiples of 64.
+function refShape() {
+  const size = charRefOn() ? activeChar().refSize : S.refSize;
+  if (!size) return null;
+  const a = size.w / size.h, area = 832 * 1216;
+  const r64 = (v) => Math.max(512, Math.round(v / 64) * 64);
+  return { w: r64(Math.sqrt(area * a)), h: r64(Math.sqrt(area / a)) };
+}
+const refLabel = (ref) => !ref ? "" : ref.mode === "reference" ? ` · reference edit${ref.extra ? ` (+${ref.extra} images)` : ""}` : ` · from image (change ${ref.denoise})`;
+function renderRefGen() {
+  renderExtraRefs();
+  const charRef = charRefOn(), has = !!S.refUpload || charRef;
+  $("refGen").style.display = has ? "" : "none";
+  if (!has) return;
+  const klein = S.engine === "klein";
+  $("useRef").checked = S.useRef;
+  $("useRefRow").style.display = charRef ? "none" : "";
+  $("refCharNote").style.display = charRef ? "" : "none";
+  $("refCharNote").textContent = charRef ? `Using ${activeChar().name}'s reference image (set in the Character section).` : "";
+  $("refGenOpts").style.display = S.useRef || charRef ? "" : "none";
+  $("kleinModeWrap").style.display = klein ? "" : "none";
+  $("kleinRefMode").value = S.kleinRefMode;
+  $("denoiseWrap").style.display = klein && S.kleinRefMode === "reference" ? "none" : "";
+  $("denoise").value = S.denoise; $("denoiseV").textContent = S.denoise.toFixed(2);
+  const shape = refShape(), b = $("refShape");
+  b.style.display = shape && (shape.w !== S.w || shape.h !== S.h) ? "" : "none";
+  if (shape) b.textContent = `Match the image's shape (${shape.w} × ${shape.h})`;
+}
+// After a reload, bring back the last reference image from ComfyUI's input folder.
+async function showStoredRef() {
+  const r = S.refUpload;
+  if (!r) return;
+  try {
+    const res = await fetch(`/view?filename=${encodeURIComponent(r.name)}&subfolder=${encodeURIComponent(r.subfolder)}&type=input`);
+    const blob = await res.blob();
+    if (!res.ok || !/^image\//.test(blob.type)) throw new Error("missing");
+    analyzeRef(new File([blob], r.name, { type: blob.type }), { upload: false, quiet: true });
+  } catch { S.refUpload = null; S.useRef = false; save(); renderRefGen(); updateSummary(); }
+}
+$("useRef").onchange = () => { S.useRef = $("useRef").checked; save(); renderRefGen(); updateSummary(); };
+$("denoise").addEventListener("input", () => { S.denoise = Number($("denoise").value); $("denoiseV").textContent = S.denoise.toFixed(2); save(); });
+$("kleinRefMode").onchange = () => { S.kleinRefMode = $("kleinRefMode").value; save(); renderRefGen(); };
+
+// Extra Klein reference slots (uploaded to ComfyUI's input/lora-lab like the main reference).
+let extraSlot = 0;
+function renderExtraRefs() {
+  const box = $("extraRefs"); box.innerHTML = "";
+  if (!Array.isArray(S.extraRefs)) S.extraRefs = [null, null];
+  const klein = S.engine === "klein";
+  $("extraRefsWrap").style.display = S.refUpload || charRefOn() || S.extraRefs.some(Boolean) ? "" : "none";
+  const hint = $("extraRefsHint"); hint.innerHTML = ""; hint.className = "hint";
+  const needsKlein = S.extraRefs.some(Boolean) && (!klein || S.kleinRefMode !== "reference" || !S.useRef);
+  if (needsKlein) {
+    hint.className = "refwarn";
+    hint.append(el("span", { text: !klein
+      ? `Image 2 only works with Klein — ${ENGINE_LABEL[S.engine]} would ignore it.`
+      : "Image 2 is only used in Klein's \"Reference edit\" with the references switched on." }),
+      el("button", { class: "btn sm", text: klein ? "Turn it on" : "Switch to Klein", onclick: useTwoRefs }));
+  } else {
+    hint.textContent = klein
+      ? "Klein combines Image 1 + Image 2 (+ Image 3). Virtual try-on: Image 1 = person, 2 = top, 3 = bottom."
+      : "Add Image 2 to combine two images — that switches you to Klein, the model that can use both.";
+  }
+  ["Image 2", "Image 3"].forEach((label, i) => {
+    if (i === 1 && !klein) return;
+    const r = S.extraRefs[i];
+    const slot = el("div", { class: "xref", title: r ? "Click to replace" : "Click, or drop an image here", tabindex: "0",
+      onclick: () => { extraSlot = i; $("extraRefFile").click(); } },
+      r ? el("img", { src: inputUrl(r), alt: "" }) : el("span", { text: "+ " + label }),
+      r ? el("button", { class: "x", text: "×", title: "Remove", onclick: (ev) => { ev.stopPropagation(); S.extraRefs[i] = null; save(); renderExtraRefs(); updateSummary(); } }) : null);
+    for (const t of ["dragenter", "dragover"]) slot.addEventListener(t, (ev) => { ev.preventDefault(); slot.classList.add("over"); });
+    for (const t of ["dragleave", "drop"]) slot.addEventListener(t, (ev) => { ev.preventDefault(); slot.classList.remove("over"); });
+    slot.addEventListener("drop", async (ev) => {
+      let f = ev.dataTransfer.files[0];
+      if (!f) {
+        const url = ev.dataTransfer.getData("text/uri-list") || ev.dataTransfer.getData("text/plain");
+        if (url) try { const b = await (await fetch(url)).blob(); f = new File([b], "reference.png", { type: b.type }); } catch {}
+      }
+      if (f) setExtraRef(i, f);
+    });
+    box.append(slot);
+  });
+}
+// Two (or three) reference images need Klein's reference edit with the references switched on.
+function useTwoRefs() {
+  if (S.engine !== "klein") S.engine = "klein";
+  S.kleinRefMode = "reference"; S.useRef = true;
+  save(); renderSettings();
+  toast("Klein · Reference edit · using all reference images", true);
+}
+async function setExtraRef(i, file) {
+  if (!file || !/^image\//.test(file.type)) return toast("That isn't an image.");
+  const ext = ((/\.(png|jpe?g|webp|bmp|gif)$/i.exec(file.name || "") || [".png"])[0]).toLowerCase();
+  const fd = new FormData();
+  fd.append("image", file, `ref_extra${i + 2}_${Date.now()}${ext}`);
+  fd.append("type", "input"); fd.append("subfolder", "lora-lab"); fd.append("overwrite", "true");
+  try {
+    const r = await api("/upload/image", { method: "POST", body: fd });
+    S.extraRefs[i] = { name: r.name, subfolder: r.subfolder || "" };
+    if (S.engine === "klein") { S.kleinRefMode = "reference"; S.useRef = true; }   // adding Image 2 means "use them"
+    save(); renderRefGen(); updateSummary();
+  } catch (err) { toast("Couldn't upload the image: " + err.message); }
+}
+$("extraRefFile").onchange = () => { setExtraRef(extraSlot, $("extraRefFile").files[0]); $("extraRefFile").value = ""; };
+$("refShape").onclick = () => {
+  const s = refShape(); if (!s) return;
+  S.w = s.w; S.h = s.h;
+  S.size = [...$("size").options].some(o => o.value === `${s.w}x${s.h}`) ? `${s.w}x${s.h}` : "custom";
+  save(); renderSettings();
+};
+
+// ---------- AI prompt writer (Ollama) ----------
+// A missing server route shows up as 404 or 405 depending on which static route catches it.
+const ROUTE_MISSING = /not found|method not allowed/i;
+const dolphinError = (err) => ROUTE_MISSING.test(err.message)
+  ? "The prompt writer isn't loaded — restart ComfyUI once." : "Prompt writer: " + err.message;
+const dolphinTarget = () => S.engine === "sdxl" ? (qualityKey("sdxl", E().model) === "pony" ? "pony" : "illustrious") : S.engine;
+async function askDolphin(idea, target) {
+  const ch = activeChar();
+  const r = await post("/lora-lab/llm", { idea, target, sfw: mode === "general",
+    character: ch ? { name: ch.name, memory: ch.memory || "" } : null });
+  if (!r || !r.text) throw new Error("The prompt writer returned an empty prompt");
+  return r.text;
+}
+let undoPrompt = null;
+async function writeWithDolphin() {
+  const idea = $("idea").value.trim();
+  if (!idea) return toast("Type an idea first.");
+  const btn = $("dolphinBtn"), st = $("dolphinStatus"), t0 = Date.now();
+  btn.disabled = true;
+  st.textContent = "Writing the prompt… on slower PCs this can take a minute or two.";
+  try {
+    const text = await askDolphin(idea, dolphinTarget());
+    undoPrompt = S.prompt; S.prompt = text; $("prompt").value = text; save(); renderLibrary();
+    st.textContent = `Written in ${Math.round((Date.now() - t0) / 1000)} s · `;
+    st.append(el("a", { href: "#", text: "Undo", style: "color:var(--accent)", onclick: (ev) => {
+      ev.preventDefault();
+      if (undoPrompt != null) { S.prompt = undoPrompt; $("prompt").value = undoPrompt; undoPrompt = null; save(); renderLibrary(); }
+      st.textContent = "";
+    } }));
+  } catch (err) {
+    st.textContent = ""; toast(dolphinError(err));
+  } finally { btn.disabled = false; }
+}
+$("dolphinBtn").onclick = writeWithDolphin;
+$("idea").addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); writeWithDolphin(); } });
+
+$("drop").onclick = () => $("refFile").click();
+$("drop").onkeydown = (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); $("refFile").click(); } };
+$("refFile").onchange = () => { analyzeRef($("refFile").files[0]); $("refFile").value = ""; };
+for (const t of ["dragenter", "dragover"]) $("drop").addEventListener(t, (ev) => { ev.preventDefault(); $("drop").classList.add("over"); });
+for (const t of ["dragleave", "drop"]) $("drop").addEventListener(t, (ev) => { ev.preventDefault(); $("drop").classList.remove("over"); });
+$("drop").addEventListener("drop", async (ev) => {
+  const f = ev.dataTransfer.files[0];
+  if (f) return analyzeRef(f);
+  // Images dragged from the results grid arrive as a URL, not a file.
+  const url = ev.dataTransfer.getData("text/uri-list") || ev.dataTransfer.getData("text/plain");
+  if (!url) return;
+  try { const b = await (await fetch(url)).blob(); analyzeRef(new File([b], "reference.png", { type: b.type })); }
+  catch { toast("Couldn't read that image — save it and drop the file instead."); }
+});
+document.addEventListener("paste", (ev) => {
+  const f = [...((ev.clipboardData && ev.clipboardData.files) || [])].find(x => /^image\//.test(x.type));
+  if (!f) return;
+  ev.preventDefault();
+  if (tab === "chars" && editChar()) setCharRef(f); else analyzeRef(f);
+});
+$("refThr").addEventListener("input", () => { S.refThr = Number($("refThr").value); save(); renderRef(); });
+$("refChars").onchange = () => { S.refChars = $("refChars").checked; save(); renderRef(); };
+$("refClear").onclick = () => {
+  refData = null; refKlein = null; $("drop").classList.remove("has"); $("dropText").textContent = DROP_TEXT;
+  $("refControls").style.display = "none"; $("refClear").style.display = "none"; renderRef();
+  S.refUpload = null; S.refSize = null; S.useRef = false; S.extraRefs = [null, null]; save(); renderRefGen(); updateSummary();
+};
+
+// ---------- tag library ----------
+// Stored on the ComfyUI machine, so every window and device shares one library.
+const LIB_ALL = "All";
+let lib = null, libCat = store.get("libCat", LIB_ALL), libEditing = false, libSynced = false, libSaveTimer = null;
+const splitTags = (s) => (s || "").split(",").map(t => t.trim()).filter(Boolean);
+const normTag = (t) => t.toLowerCase().replace(/_/g, " ").replace(/\s+/g, " ").trim();
+
+async function loadLibrary() {
+  try { lib = await api("/lora-lab/tags"); libSynced = true; }
+  catch { lib = lib || store.get("libLocal", null) || { categories: [] }; libSynced = false; }
+  renderLibrary();
+}
+function saveLibrary() {
+  store.set("libLocal", lib);
+  renderLibrary();
+  clearTimeout(libSaveTimer);
+  libSaveTimer = setTimeout(async () => {
+    libSaveTimer = null;
+    try { lib = await post("/lora-lab/tags", lib); libSynced = true; }
+    catch (err) { libSynced = false; if (!ROUTE_MISSING.test(err.message)) toast("Couldn't save the tag library: " + err.message); }
+    renderLibrary();
+  }, 400);
+}
+// Adult categories (flagged by the server) only exist in the Adult 18+ workspace.
+const catVisible = (c) => mode === "adult" || !c.adult;
+function currentLibCat() { return lib && lib.categories.find(c => c.name === libCat && catVisible(c)); }
+
+function renderLibrary() {
+  if (!lib) return;
+  if (libCat !== LIB_ALL && !currentLibCat()) libCat = LIB_ALL;
+  $("libNote").textContent = libSynced ? "" : " · not shared yet — restart LoRA Lab";
+  $("libNote").className = "hint";
+  const cats = $("libCats"); cats.innerHTML = "";
+  for (const name of [LIB_ALL, ...lib.categories.filter(catVisible).map(c => c.name)]) {
+    cats.append(el("button", { class: "cat" + (name === libCat ? " on" : ""), text: name,
+      onclick: () => { libCat = name; store.set("libCat", name); renderLibrary(); } }));
+  }
+  const q = normTag($("libSearch").value);
+  const clickTarget = libTarget();
+  const inPrompt = new Set(splitTags(clickTarget.get()).map(normTag));
+  $("libHint").textContent = `Click a tag to add it to ${clickTarget.label}, click again to remove it.`;
+  const box = $("libTags"); box.innerHTML = ""; box.classList.toggle("editing", libEditing);
+  let shown = 0;
+  for (const c of lib.categories.filter(catVisible)) {
+    if (libCat !== LIB_ALL && c.name !== libCat) continue;
+    for (const t of c.tags) {
+      if (q && !normTag(t).includes(q)) continue;
+      const on = inPrompt.has(normTag(t));
+      box.append(el("span", { class: "tag" + (on ? " on" : ""), text: libEditing ? t + "  ×" : t,
+        title: libEditing ? `Remove "${t}" from ${c.name}` : on ? "In the prompt — click to remove" : "Click to add to the prompt",
+        onclick: () => libEditing ? removeLibTag(c, t) : togglePromptTag(t) }));
+      shown++;
+    }
+  }
+  if (!shown) box.append(el("span", { class: "hint", text: q ? "No matching tags." : "No tags here yet — use ✎ Edit to add some." }));
+  $("libHint").style.display = libEditing ? "none" : "";
+  $("libEditor").style.display = libEditing ? "" : "none";
+  $("libEdit").textContent = libEditing ? "✓ Done" : "✎ Edit";
+  const target = currentLibCat();
+  $("libTarget").textContent = target ? target.name : "My tags";
+  $("libDelCat").style.display = target ? "" : "none";
+}
+
+// Library clicks go to the character field you last clicked into while on the Characters tab, else the prompt.
+function libTarget() {
+  if (tab === "chars" && editChar() && lastCharField) {
+    const f = $(lastCharField);
+    return { label: `${editChar().name}'s ${{ charAppearance: "appearance", charOutfit: "outfit", charTriggers: "name tag" }[lastCharField]}`,
+      get: () => f.value, set: (v) => { f.value = v; f.dispatchEvent(new Event("input")); } };
+  }
+  return { label: "the prompt", get: () => S.prompt, set: (v) => { S.prompt = v; $("prompt").value = v; save(); } };
+}
+function togglePromptTag(t) {
+  const target = libTarget();
+  const tags = splitTags(target.get()), i = tags.findIndex(x => normTag(x) === normTag(t));
+  if (i >= 0) tags.splice(i, 1); else tags.push(t);
+  target.set(tags.join(", "));
+  renderLibrary();
+}
+function removeLibTag(c, t) { c.tags = c.tags.filter(x => x !== t); saveLibrary(); }
+function addLibTags(text) {
+  const tags = splitTags(text);
+  if (!tags.length) return;
+  const blocked = tags.filter(t => REF_BLOCK.has(normTag(t)));
+  if (blocked.length) toast("Child-related tags can't be added: " + blocked.join(", "));
+  let cat = currentLibCat();
+  if (!cat) {   // "All" is selected: collect into a "My tags" category
+    const mine = mode === "adult" ? "My tags 18+" : "My tags";
+    cat = lib.categories.find(c => c.name === mine);
+    if (!cat) { cat = { name: mine, tags: [], adult: mode === "adult" }; lib.categories.push(cat); }
+  }
+  let added = 0;
+  for (const t of tags) {
+    if (REF_BLOCK.has(normTag(t)) || cat.tags.some(x => normTag(x) === normTag(t))) continue;
+    cat.tags.push(t); added++;
+  }
+  saveLibrary();
+  if (added) toast(`Added ${added} tag${added > 1 ? "s" : ""} to ${cat.name}`, true);
+  else if (!blocked.length) toast(`Those tags are already in ${cat.name}`, true);
+}
+
+$("libEdit").onclick = () => { libEditing = !libEditing; renderLibrary(); };
+$("libSearch").addEventListener("input", renderLibrary);
+$("libAddTags").onclick = () => { addLibTags($("libNewTags").value); $("libNewTags").value = ""; };
+$("libNewTags").addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); $("libAddTags").click(); } });
+$("libFromPrompt").onclick = () => addLibTags(S.prompt);
+$("libAddCat").onclick = () => {
+  const name = $("libNewCat").value.trim().replace(/\s+/g, " ").slice(0, 40);
+  if (!name || name === LIB_ALL) return;
+  if (lib.categories.some(c => c.name.toLowerCase() === name.toLowerCase())) return toast(`"${name}" already exists`);
+  lib.categories.push({ name, tags: [], adult: mode === "adult" });
+  libCat = name; store.set("libCat", name); $("libNewCat").value = "";
+  saveLibrary();
+};
+$("libNewCat").addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); $("libAddCat").click(); } });
+$("libDelCat").onclick = () => {
+  const cat = currentLibCat(); if (!cat) return;
+  if (!confirm(`Delete the "${cat.name}" category and its ${cat.tags.length} tags?`)) return;
+  lib.categories = lib.categories.filter(c => c !== cat);
+  libCat = LIB_ALL; store.set("libCat", LIB_ALL);
+  saveLibrary();
+};
+let libPromptTimer = null;
+$("prompt").addEventListener("input", () => { clearTimeout(libPromptTimer); libPromptTimer = setTimeout(renderLibrary, 150); });
+// Pick up changes made on another device when this window comes back into view.
+document.addEventListener("visibilitychange", () => { if (!document.hidden && !libEditing && !libSaveTimer) loadLibrary(); });
+
+// ---------- characters ----------
+// Stored on the ComfyUI machine (shared by every device). The active character's tags go before the prompt,
+// their LoRAs are stacked under every column's LoRA, and their reference image can replace the panel's.
+let chars = [], charsLoaded = false, editId = store.get("charEdit", null), lastCharField = null, tab = store.get("tab", "results");
+const charSaveTimers = {};
+// Each workspace only sees its own characters (characters made before workspaces existed are Adult).
+const wsChars = () => chars.filter(c => (c.workspace || "adult") === mode);
+const activeChar = () => wsChars().find(c => c.id === S.charId) || null;
+const editChar = () => wsChars().find(c => c.id === editId) || null;
+const imgKey = (im) => `${im.subfolder || ""}/${im.filename}`;
+function charRefOn() { const ch = activeChar(); return !!(ch && S.charUse.ref && ch.ref); }
+const inputUrl = (r) => `/view?filename=${encodeURIComponent(r.name)}&subfolder=${encodeURIComponent(r.subfolder || "")}&type=input`;
+function charThumb(c) {
+  if (c.ref) return inputUrl(c.ref);
+  const imgs = c.images || [];
+  return imgs.length ? imgUrl(imgs[imgs.length - 1].image) : "icon-192.png";
+}
+const charRouteError = (err, what) => ROUTE_MISSING.test(err.message) ? "Restart LoRA Lab once to enable characters." : `${what}: ${err.message}`;
+
+function showTab(t) {
+  tab = t === "chars" ? "chars" : "results"; store.set("tab", tab);
+  for (const b of $("tabs").children) b.classList.toggle("on", b.dataset.tab === tab);
+  $("tabResults").style.display = tab === "results" ? "" : "none";
+  $("tabChars").style.display = tab === "chars" ? "" : "none";
+  if (tab === "chars") renderChars();
+  $(tab === "chars" ? "libSlotChars" : "libSlotCreate").append($("libCard"));
+  renderLibrary();
+}
+$("tabs").addEventListener("click", (ev) => { if (ev.target.dataset.tab) showTab(ev.target.dataset.tab); });
+
+async function loadChars() {
+  try { chars = (await api("/lora-lab/characters")).characters; charsLoaded = true; }
+  catch { charsLoaded = false; }
+  if (charsLoaded && S.charId && !activeChar()) { S.charId = ""; save(); }
+  renderCharActive();
+  if (tab === "chars") renderChars();
+}
+
+// Sidebar: pick the active character and what to use from it.
+function renderCharActive() {
+  const sel = $("charActive"); sel.innerHTML = "";
+  sel.append(el("option", { value: "", text: wsChars().length ? "No character" : "No characters yet — see the Characters tab" }));
+  for (const c of wsChars()) sel.append(el("option", { value: c.id, text: c.name }));
+  const ch = activeChar();
+  sel.value = ch ? ch.id : "";
+  $("charActiveBox").style.display = ch ? "" : "none";
+  $("charEditActive").style.display = ch ? "" : "none";
+  if (ch) {
+    $("charMiniImg").src = charThumb(ch);
+    $("charMiniName").textContent = ch.name;
+    const info = [];
+    if (ch.loras.length) info.push(`${ch.loras.filter(l => compatible(l.name)).length} of ${ch.loras.length} LoRAs fit ${ENGINE_LABEL[S.engine]}`);
+    if (ch.engine !== "any" && ch.engine !== S.engine) info.push(`made for ${ENGINE_LABEL[ch.engine]}`);
+    $("charMiniInfo").textContent = info.join(" · ") || "Their tags go before your prompt";
+    $("cuAppearance").checked = S.charUse.appearance;
+    $("cuOutfit").checked = S.charUse.outfit;
+    $("cuLoras").checked = S.charUse.loras; $("cuLoras").disabled = !ch.loras.length;
+    $("cuRef").checked = S.charUse.ref && !!ch.ref; $("cuRef").disabled = !ch.ref;
+    // Memory: last settings and recent prompts used with this character in this workspace.
+    const last = (ch.last || {})[mode];
+    $("charRestore").style.display = last ? "" : "none";
+    const recent = (ch.prompts || {})[mode] || [];
+    const rs = $("charRecent"); rs.innerHTML = "";
+    rs.style.display = recent.length ? "" : "none";
+    rs.append(el("option", { value: "", text: `Recent prompts (${recent.length})…` }));
+    recent.forEach((t, i) => rs.append(el("option", { value: String(i), text: t.length > 70 ? t.slice(0, 70) + "…" : t, title: t })));
+  }
+  renderRefGen(); updateSummary();
+}
+$("charActive").onchange = () => { S.charId = $("charActive").value; save(); renderCharActive(); renderCharList(); };
+for (const k of ["appearance", "outfit", "loras", "ref"]) {
+  const id = "cu" + k[0].toUpperCase() + k.slice(1);
+  $(id).onchange = () => { S.charUse[k] = $(id).checked; save(); renderCharActive(); };
+}
+$("charEditActive").onclick = () => { editId = S.charId; store.set("charEdit", editId); showTab("chars"); };
+
+// Characters tab
+function renderCharList() {
+  const list = $("charList"); list.innerHTML = "";
+  if (!charsLoaded) list.append(el("div", { class: "hint", text: "Restart LoRA Lab once to enable characters." }));
+  for (const c of wsChars()) {
+    list.append(el("div", { class: "charitem" + (c.id === editId ? " on" : ""), onclick: () => { editId = c.id; store.set("charEdit", editId); lastCharField = null; renderChars(); renderLibrary(); } },
+      el("img", { src: charThumb(c), alt: "" }),
+      el("div", { style: "min-width:0" }, el("b", { text: c.name }),
+        el("div", { class: "hint", text: `${galleryImages(c).length} images${c.id === S.charId ? " · active" : ""}` }))));
+  }
+}
+
+const CHAR_FIELDS = { charName: "name", charTriggers: "triggers", charAppearance: "appearance", charOutfit: "outfit", charNegative: "negative",
+  charNotes: "notes", charMemory: "memory" };
+const CHAR_TAG_FIELDS = ["charTriggers", "charAppearance", "charOutfit"];
+function renderChars() {
+  renderCharList();
+  const c = editChar();
+  $("charEmpty").style.display = c ? "none" : "";
+  $("charForm").style.display = c ? "" : "none";
+  if (!c) return;
+  for (const [id, key] of Object.entries(CHAR_FIELDS)) if (document.activeElement !== $(id)) $(id).value = c[key] || "";
+  $("charEngine").value = c.engine;
+  $("charRefDrop").classList.toggle("has", !!c.ref);
+  $("charRefImg").src = c.ref ? inputUrl(c.ref) : "";
+  $("charAutoTag").disabled = !c.ref;
+  $("charUseBtn").textContent = c.id === S.charId ? "✓ Active character" : "Use this character";
+  renderCharLoras();
+  renderCharGallery();
+}
+function renderCharLoras() {
+  const c = editChar(); if (!c) return;
+  const box = $("charLoras"); box.innerHTML = "";
+  for (const l of c.loras) {
+    const fam = (loraInfo[l.name] || {}).family || "other";
+    const mismatch = c.engine !== "any" && fam !== c.engine;
+    box.append(el("div", { class: "charlora" },
+      el("span", { class: "name", text: stem(l.name), title: l.name }),
+      el("span", { class: "badge " + fam, text: ENGINE_LABEL[fam] || fam, title: mismatch ? `Made for ${ENGINE_LABEL[fam] || fam}; only used when generating with that model type` : "" }),
+      el("input", { type: "number", min: "-2", max: "3", step: "0.05", value: l.strength, title: "Strength",
+        oninput: (ev) => { l.strength = parseFloat(ev.target.value) || 0; scheduleCharSave(c); } }),
+      el("button", { class: "btn sm danger", text: "×", title: "Remove", onclick: () => { c.loras = c.loras.filter(x => x !== l); scheduleCharSave(c); renderCharLoras(); } })));
+  }
+  if (!c.loras.length) box.append(el("div", { class: "hint", text: "None yet." }));
+  const avail = lists.loras.filter(n => !c.loras.some(l => l.name === n) && loraAllowed(n) && ENGINE_LABEL[(loraInfo[n] || {}).family])
+    .sort((a, b) => isAdultLora(a) - isAdultLora(b));
+  fillSelect($("charLoraPick"), avail, null, n => `${isAdultLora(n) ? "18+ · " : ""}${stem(n)} — ${ENGINE_LABEL[loraInfo[n].family]}`);
+  $("charLoraAdd").disabled = !avail.length;
+}
+// Gallery of this workspace only, favourites first.
+function galleryImages(c) {
+  const fav = new Set(c.favorites || []);
+  const imgs = (c.images || []).filter(x => (x.mode || "adult") === mode).slice().reverse();
+  return [...imgs.filter(x => fav.has(imgKey(x.image))), ...imgs.filter(x => !fav.has(imgKey(x.image)))];
+}
+function renderCharGallery() {
+  const c = editChar(); if (!c) return;
+  const imgs = galleryImages(c), fav = new Set(c.favorites || []);
+  $("charCount").textContent = imgs.length ? `(${imgs.length})` : "";
+  const box = $("charGallery"); box.innerHTML = "";
+  if (!imgs.length) box.append(el("div", { class: "hint", text: "Images you generate with this character in this workspace show up here." }));
+  const items = imgs.map(x => ({ image: x.image, label: c.name + (x.lora ? " · " + stem(x.lora) : ""), seed: x.seed }));
+  imgs.forEach((x, i) => {
+    const key = imgKey(x.image), isFav = fav.has(key);
+    box.append(el("div", { class: "gimg" },
+      el("img", { src: imgUrl(x.image), loading: "lazy", alt: "", onclick: () => openLbItems(items, i) }),
+      el("div", { class: "gb" },
+        el("button", { class: isFav ? "on" : "", text: "★", title: isFav ? "Remove from favourites" : "Add to favourites",
+          onclick: () => { c.favorites = isFav ? (c.favorites || []).filter(k => k !== key) : [...(c.favorites || []), key]; scheduleCharSave(c); renderCharGallery(); } }),
+        el("button", { text: "⤴", title: "Use as this character's reference image",
+          onclick: async () => { try { const b = await (await fetch(imgUrl(x.image))).blob(); setCharRef(new File([b], x.image.filename, { type: b.type })); } catch { toast("Couldn't read that image."); } } }))));
+  });
+}
+
+function scheduleCharSave(c) {
+  $("charSaved").textContent = "Saving…";
+  clearTimeout(charSaveTimers[c.id]);
+  charSaveTimers[c.id] = setTimeout(() => saveChar(c), 500);
+}
+async function saveChar(c) {
+  clearTimeout(charSaveTimers[c.id]); delete charSaveTimers[c.id];
+  try {
+    const saved = await post("/lora-lab/characters", c);
+    // Only take server-owned fields, so text typed while saving isn't overwritten.
+    Object.assign(c, { images: saved.images, created: saved.created, updated: saved.updated });
+    if (editChar() === c) $("charSaved").textContent = "Saved";
+    renderCharList(); renderCharActive();
+  } catch (err) { $("charSaved").textContent = ""; toast(charRouteError(err, "Couldn't save the character")); }
+}
+
+for (const [id, key] of Object.entries(CHAR_FIELDS)) {
+  $(id).addEventListener("input", () => {
+    const c = editChar(); if (!c) return;
+    c[key] = $(id).value; scheduleCharSave(c);
+    if (CHAR_TAG_FIELDS.includes(id)) renderLibrary();
+  });
+}
+for (const id of CHAR_TAG_FIELDS) {
+  $(id).addEventListener("focus", () => { lastCharField = id; renderLibrary(); });
+  $(id).addEventListener("blur", () => {   // same safeguard as everywhere else
+    const c = editChar(); if (!c) return;
+    const tags = splitTags($(id).value), kept = tags.filter(t => !REF_BLOCK.has(normTag(t)));
+    if (kept.length !== tags.length) {
+      $(id).value = c[CHAR_FIELDS[id]] = kept.join(", "); scheduleCharSave(c);
+      toast("Child-related tags were removed.");
+    }
+  });
+}
+$("charEngine").onchange = () => { const c = editChar(); if (!c) return; c.engine = $("charEngine").value; scheduleCharSave(c); renderCharLoras(); };
+
+$("charNew").onclick = async () => {
+  try {
+    const c = await post("/lora-lab/characters", { name: `Character ${wsChars().length + 1}`, engine: "any", workspace: mode });
+    chars.push(c); charsLoaded = true; editId = c.id; store.set("charEdit", editId); lastCharField = null;
+    renderChars(); renderCharActive();
+    $("charName").focus(); $("charName").select();
+  } catch (err) { toast(charRouteError(err, "Couldn't create a character")); }
+};
+$("charUseBtn").onclick = () => {
+  const c = editChar(); if (!c) return;
+  S.charId = c.id;
+  if (c.engine !== "any" && c.engine !== S.engine) S.engine = c.engine;
+  save(); renderSettings(); renderChars();
+  toast(`${c.name} is now the active character`, true);
+};
+$("charDelete").onclick = async () => {
+  const c = editChar(); if (!c) return;
+  if (!confirm(`Delete ${c.name}? Their generated images stay in your output folder.`)) return;
+  try { await post("/lora-lab/characters/delete", { id: c.id }); }
+  catch (err) { return toast(charRouteError(err, "Couldn't delete")); }
+  chars = chars.filter(x => x !== c);
+  if (S.charId === c.id) { S.charId = ""; save(); }
+  editId = chars.length ? chars[0].id : null; store.set("charEdit", editId);
+  renderChars(); renderCharActive();
+};
+$("charLoraAdd").onclick = () => {
+  const c = editChar(), n = $("charLoraPick").value; if (!c || !n) return;
+  c.loras.push({ name: n, strength: (ENGINE_DEFAULTS[(loraInfo[n] || {}).family] || { strength: 1 }).strength });
+  scheduleCharSave(c); renderCharLoras();
+};
+
+// Reference image for the character (also used for "✨ Tags from image").
+async function setCharRef(file) {
+  const c = editChar(); if (!c || !file || !/^image\//.test(file.type)) return;
+  const ext = ((/\.(png|jpe?g|webp|bmp|gif)$/i.exec(file.name || "") || [".png"])[0]).toLowerCase();
+  const fd = new FormData();
+  fd.append("image", file, `char_${c.id}_${Date.now()}${ext}`);
+  fd.append("type", "input"); fd.append("subfolder", "lora-lab/characters"); fd.append("overwrite", "true");
+  $("charSaved").textContent = "Uploading…";
+  try {
+    const r = await api("/upload/image", { method: "POST", body: fd });
+    c.ref = { name: r.name, subfolder: r.subfolder || "" };
+    c.refSize = await imageSize(file);
+    await saveChar(c);
+    renderChars(); renderCharActive();
+    if (!c.appearance && !c.outfit) autoTagChar(c);   // first image: fill the tags automatically
+  } catch (err) { $("charSaved").textContent = ""; toast("Couldn't upload the image: " + err.message); }
+}
+$("charRefDrop").onclick = () => $("charRefFile").click();
+$("charRefDrop").onkeydown = (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); $("charRefFile").click(); } };
+$("charRefFile").onchange = () => { setCharRef($("charRefFile").files[0]); $("charRefFile").value = ""; };
+for (const t of ["dragenter", "dragover"]) $("charRefDrop").addEventListener(t, (ev) => { ev.preventDefault(); $("charRefDrop").classList.add("over"); });
+for (const t of ["dragleave", "drop"]) $("charRefDrop").addEventListener(t, (ev) => { ev.preventDefault(); $("charRefDrop").classList.remove("over"); });
+$("charRefDrop").addEventListener("drop", async (ev) => {
+  const f = ev.dataTransfer.files[0];
+  if (f) return setCharRef(f);
+  const url = ev.dataTransfer.getData("text/uri-list") || ev.dataTransfer.getData("text/plain");   // dragged from results/gallery
+  if (!url) return;
+  try { const b = await (await fetch(url)).blob(); setCharRef(new File([b], "reference.png", { type: b.type })); }
+  catch { toast("Couldn't read that image — save it and drop the file instead."); }
+});
+
+// Split tagger output into appearance (stays) and outfit (changes); poses, expressions and scenery are skipped.
+const OUTFIT_CATS = new Set(["Clothing", "Accessories", "Lingerie & fetish wear (NSFW)"]);
+const LOOK_CATS = new Set(["Subject", "Hair", "Body", "Fantasy"]);
+const OUTFIT_RE = /(dress|shirt|skirt|jacket|coat|glove|boot|shoe|hat\b|ribbon|bow\b|bowtie|uniform|kimono|sock|thighhighs|pantyhose|leotard|bikini|swimsuit|sleeve|collar|necktie|scarf|cape|armor|apron|hood|vest|pants|shorts|belt|earring|necklace|choker|glasses|eyewear|hairband|hair ornament|hairclip|hair flower|hair ribbon|hair bow|bra\b|panties|lingerie|sweater|hoodie|sandal|heels|tiara|crown|mask|obi|sash|bodysuit)/;
+const LOOK_RE = /(hair\b|hair$|eyes|bangs|ponytail|braid|twintails|bun\b|skin|ears|tail\b|horns|wings|breasts|freckles|mole|pupils|eyelashes|abs\b|muscular|curvy|fang|^\d\+?(girl|boy)s?$|^solo$)/;
+const SKIP_RE = /(closed eyes|eye closed|half-closed|looking|eye contact|tears|navel|cleavage|armpits|barefoot|thighs|feet|toes|ass\b|sideboob|underboob|collarbone|stomach|midriff|bare shoulders|wet|sweat|groin|^breasts$)/;
+async function autoTagChar(c) {
+  if (!c.ref) return;
+  const btn = $("charAutoTag"); btn.disabled = true; btn.textContent = "Reading…";
+  try {
+    const blob = await (await fetch(inputUrl(c.ref))).blob();
+    const fd = new FormData(); fd.append("image", blob, c.ref.name);
+    const r = await api("/lora-lab/tag", { method: "POST", body: fd });
+    const catOf = {};
+    if (lib) for (const cat of lib.categories) for (const t of cat.tags) catOf[normTag(t)] = cat.name;
+    const look = [], outfit = [];
+    for (const [t, p] of r.general) {
+      if (p < 0.35 || REF_BLOCK.has(normTag(t)) || SKIP_RE.test(t)) continue;
+      const cat = catOf[normTag(t)];
+      if (OUTFIT_CATS.has(cat) || OUTFIT_RE.test(t)) outfit.push(t);
+      else if (LOOK_CATS.has(cat) || LOOK_RE.test(t)) look.push(t);
+    }
+    const merge = (cur, add) => {
+      const have = new Set(splitTags(cur).map(normTag));
+      return splitTags(cur).concat(add.filter(t => !have.has(normTag(t)) && have.add(normTag(t)))).join(", ");
+    };
+    c.appearance = merge(c.appearance, look);
+    c.outfit = merge(c.outfit, outfit);
+    await saveChar(c);
+    renderChars();
+    toast(`Read ${look.length} appearance and ${outfit.length} outfit tags from the image`, true);
+  } catch (err) {
+    toast(ROUTE_MISSING.test(err.message) ? "The tagger isn't loaded — restart LoRA Lab once." : "Couldn't read tags: " + err.message);
+  } finally { btn.textContent = "✨ Tags from image"; btn.disabled = !(editChar() && editChar().ref); }
+}
+$("charAutoTag").onclick = () => { const c = editChar(); if (c) autoTagChar(c); };
+
+// ---------- character memory ----------
+function settingsSnapshot() {
+  const e = E();
+  return { engine: S.engine, model: e.model, te: e.te, avae: e.avae, vae: e.vae, clipSkip: e.clipSkip, steps: e.steps, cfg: e.cfg,
+    sampler: e.sampler, scheduler: e.scheduler, size: S.size, w: S.w, h: S.h, denoise: S.denoise, kleinRefMode: S.kleinRefMode,
+    charUse: Object.assign({}, S.charUse),
+    loras: selectedLoras().map(n => ({ name: n, strength: loraState(n).strength ?? ENGINE_DEFAULTS[S.engine].strength })) };
+}
+function rememberForChar() {
+  const ch = activeChar(); if (!ch) return;
+  post("/lora-lab/characters/remember", { id: ch.id, mode, settings: settingsSnapshot(), prompt: S.prompt })
+    .then((r) => { ch.last = r.last; ch.prompts = r.prompts; renderCharActive(); })
+    .catch(() => {});
+}
+function restoreSettings(st) {
+  if (st.engine in ENGINE_DEFAULTS) S.engine = st.engine;
+  const e = E();
+  for (const k of ["model", "te", "avae", "vae", "clipSkip", "steps", "cfg", "sampler", "scheduler"]) if (st[k] != null) e[k] = st[k];
+  for (const k of ["size", "w", "h", "denoise", "kleinRefMode"]) if (st[k] != null) S[k] = st[k];
+  if (st.charUse) S.charUse = Object.assign({}, S.charUse, st.charUse);
+  for (const n of lists.loras) if (loraVisible(n)) loraState(n).on = false;
+  for (const l of st.loras || []) {
+    if (!lists.loras.includes(l.name) || !loraAllowed(l.name)) continue;
+    const ls = loraState(l.name); ls.on = true; ls.strength = l.strength;
+    if (mode === "adult" && !isAdultLora(l.name)) S.showGenLoras = true;
+  }
+  save(); renderSettings();
+}
+$("charRestore").onclick = () => {
+  const ch = activeChar(), st = ch && (ch.last || {})[mode];
+  if (st) { restoreSettings(st); toast(`Restored the settings last used with ${ch.name}`, true); }
+};
+$("charRecent").onchange = () => {
+  const ch = activeChar(), i = $("charRecent").value;
+  const t = ch && i !== "" ? ((ch.prompts || {})[mode] || [])[Number(i)] : null;
+  if (t != null) { S.prompt = t; $("prompt").value = t; save(); renderLibrary(); }
+  $("charRecent").value = "";
+};
+
+// Pick up characters edited on another device.
+document.addEventListener("visibilitychange", () => {
+  const editing = document.activeElement && document.activeElement.closest && document.activeElement.closest("#charForm");
+  if (!document.hidden && !Object.keys(charSaveTimers).length && !editing) loadChars();
+});
+
+// ---------- workspaces & layout ----------
+function applyModeUI() {
+  document.body.classList.toggle("adult", mode === "adult");
+  for (const b of $("modeSeg").children) b.classList.toggle("on", b.dataset.m === mode);
+  document.title = mode === "adult" ? "LoRA Lab · 18+" : "LoRA Lab";
+}
+// Re-attach jobs of this workspace that were still running (they finish in the background).
+function trackPending() {
+  jobs.clear();
+  for (const b of batches) b.cells.forEach((c, idx) => {
+    if (!c.image && c.pid && c.status !== "error") { c.status = "queued"; jobs.set(c.pid, { batchId: b.id, idx }); }
+  });
+  for (const pid of jobs.keys()) fetchHistory(pid);
+}
+function switchMode(m) {
+  if (m === mode) return;
+  if (m === "adult" && !confirm("Switch to the Adult 18+ workspace?\n\nIt has its own prompt, LoRAs, reference images, characters and results, separate from General.")) return;
+  save(); saveBatches();
+  mode = m; store.set("mode", m);
+  const next = loadWorkspace(m);
+  for (const k of Object.keys(S)) delete S[k];
+  Object.assign(S, next);
+  batches = store.get("batches." + m, []);
+  trackPending();
+  refData = null; refKlein = null; $("refControls").style.display = "none"; renderRef();
+  $("drop").classList.remove("has"); $("refImg").src = ""; $("dropText").textContent = DROP_TEXT; $("refClear").style.display = "none";
+  lastCharField = null;
+  applyModeUI(); renderSettings(); renderResults(); showStoredRef();
+  if (tab === "chars") renderChars();
+  toast(m === "adult" ? "Adult 18+ workspace" : "General workspace", true);
+}
+$("modeSeg").addEventListener("click", (ev) => { if (ev.target.dataset.m) switchMode(ev.target.dataset.m); });
+
+// Sidebar sections collapse when you click their header; the layout is shared by both workspaces.
+function initCollapsible() {
+  const collapsed = new Set(store.get("collapsed", []));
+  for (const sec of document.querySelectorAll("aside section, .card.collapsible")) {
+    const h = sec.querySelector(":scope > .h"); if (!h) continue;
+    const key = h.textContent.replace(/^[\d\s·]+/, "").trim().split(/\s/)[0];
+    sec.classList.toggle("collapsed", collapsed.has(key));
+    h.addEventListener("click", (ev) => {
+      if (ev.target.closest("button, input, select, a")) return;
+      sec.classList.toggle("collapsed");
+      if (sec.classList.contains("collapsed")) collapsed.add(key); else collapsed.delete(key);
+      store.set("collapsed", [...collapsed]);
+    });
+  }
+}
+function applyAdvanced() {
+  const on = !!store.get("advanced", false);
+  document.body.classList.toggle("advanced", on);
+  $("advanced").checked = on;
+}
+$("advanced").onchange = () => { store.set("advanced", $("advanced").checked); applyAdvanced(); };
+
+// ---------- toolbar ----------
+$("generate").onclick = generate;
+$("generate2").onclick = generate;
+$("cancel").onclick = async () => {
+  const ids = [...jobs.keys()];
+  if (!ids.length) return toast("Nothing queued from LoRA Lab", true);
+  try {
+    await post("/queue", { delete: ids.filter(id => id !== runningId) });
+    if (runningId && jobs.has(runningId)) await post("/interrupt", { prompt_id: runningId });
+  } catch (e) { toast("Cancel failed: " + e.message); }
+  for (const id of ids) { const f = findJob(id); if (f && !f.c.image) { f.c.status = "error"; f.c.error = "Cancelled"; updateCell(f.b, f.idx); } jobs.delete(id); }
+  saveBatches(); toast("Cancelled", true);
+};
+$("freeVram").onclick = async () => { try { await post("/free", { unload_models: true, free_memory: true }); toast("Models unloaded from VRAM", true); } catch (e) { toast(e.message); } };
+$("clearResults").onclick = () => {
+  if (jobs.size) return toast("Wait for the running images to finish (or Cancel) before clearing.");
+  batches = []; saveBatches(); renderResults();
+};
+
+// ---------- boot ----------
+(async () => {
+  applyModeUI();
+  applyAdvanced();
+  initCollapsible();
+  bindSettings();
+  renderRef();
+  // Anything left "in progress" from a previous session can't be tracked any more; re-check it against history.
+  for (const b of batches) b.cells.forEach((c, idx) => { if (!c.image && c.pid && c.status !== "error") { c.status = "queued"; jobs.set(c.pid, { batchId: b.id, idx }); } });
+  renderResults();
+  connect();
+  try { await Promise.all([loadModels(), loadLoras()]); }
+  catch (e) { toast("Couldn't load model lists from ComfyUI: " + e.message); }
+  renderSettings();
+  showStoredRef();
+  loadLibrary();
+  showTab(tab);
+  loadChars();
+})();
+})();
+</script>
+</body>
+</html>

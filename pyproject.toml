@@ -1,0 +1,16 @@
+[project]
+name = "comfyui-lora-lab"
+description = "A friendly app for your own ComfyUI: compare LoRAs side by side, characters, tag library, reference images, try-on, upscale and background removal."
+version = "1.0.0"
+license = { file = "LICENSE" }
+dependencies = ["onnxruntime"]
+
+[project.urls]
+# Fill in when you publish (needed for the Comfy Registry).
+Repository = ""
+
+[tool.comfy]
+# Your publisher id from https://registry.comfy.org (needed only to publish there).
+PublisherId = ""
+DisplayName = "LoRA Lab"
+Icon = ""
